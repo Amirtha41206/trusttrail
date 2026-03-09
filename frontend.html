@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>TrustTrail 🛡️</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080C14;--bg2:#0D1525;--surface:#111827;--surface2:#1a2438;
+  --border:#1e2d47;--accent:#FF3B6B;--teal:#00D4AA;--yellow:#FFB800;
+  --blue:#4A9EFF;--text:#F0F4FF;--text2:#8B9CB8;--text3:#4A5568;
+  --radius:20px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:#000;font-family:'DM Sans',sans-serif;color:var(--text);overflow:hidden;}
+
+/* APP SHELL */
+.app{width:100%;max-width:390px;height:100vh;max-height:844px;margin:0 auto;position:relative;overflow:hidden;background:var(--bg);}
+
+/* SCREENS */
+.screen{position:absolute;inset:0;display:none;flex-direction:column;background:var(--bg);}
+.screen.active{display:flex;}
+.screen.anim-in{animation:slideIn .28s cubic-bezier(.4,0,.2,1) forwards;}
+.screen.anim-back{animation:slideBack .28s cubic-bezier(.4,0,.2,1) forwards;}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+@keyframes slideBack{from{transform:translateX(-30%)}to{transform:translateX(0)}}
+
+/* SCROLL */
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;}
+.scroll::-webkit-scrollbar{display:none;}
+
+/* STATUS BAR */
+.sbar{display:flex;justify-content:space-between;align-items:center;padding:14px 24px 6px;flex-shrink:0;}
+.sbar-t{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text);}
+
+/* BOTTOM NAV */
+.bnav{flex-shrink:0;display:flex;background:rgba(8,12,20,.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:10px 0 22px;}
+.bni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0;transition:transform .15s;}
+.bni:active{transform:scale(.88);}
+.bni-icon{font-size:22px;line-height:1;}
+.bni-label{font-size:10px;color:var(--text3);font-weight:500;}
+.bni.on .bni-label{color:var(--accent);}
+.bni.on-t .bni-label{color:var(--teal);}
+.bni-dot{width:4px;height:4px;border-radius:50%;margin:0 auto;}
+.bni.on .bni-dot{background:var(--accent);}
+.bni.on-t .bni-dot{background:var(--teal);}
+
+/* PAGE HEADER */
+.phead{display:flex;align-items:center;gap:14px;padding:8px 24px 16px;flex-shrink:0;}
+.back{width:46px;height:46px;border-radius:14px;background:var(--surface2);border:2px solid var(--teal);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s;box-shadow:0 0 14px rgba(0,212,170,.15);font-size:22px;color:var(--teal);font-weight:700;}
+.back:active{transform:scale(.9);}
+.ptitle{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;}
+.ptitle span{color:var(--teal);}
+.ptitle.red span{color:var(--accent);}
+.psub{font-size:12px;color:var(--text2);margin-top:2px;}
+
+/* FORMS */
+.flabel{font-size:12px;color:var(--text2);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;display:block;}
+.finput,.fselect,.ftextarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 16px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;transition:border-color .2s;}
+.finput:focus,.fselect:focus,.ftextarea:focus{border-color:var(--teal);}
+.finput::placeholder,.ftextarea::placeholder{color:var(--text3);}
+.ftextarea{resize:none;height:80px;}
+.fgroup{margin-bottom:16px;}
+
+/* BUTTONS */
+.btn-accent{width:100%;padding:16px;border-radius:16px;background:linear-gradient(135deg,var(--accent),#cc1a47);border:none;color:#fff;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;cursor:pointer;transition:all .2s;box-shadow:0 8px 24px rgba(255,59,107,.3);}
+.btn-accent:active{transform:scale(.97);}
+.btn-teal{width:100%;padding:16px;border-radius:16px;background:linear-gradient(135deg,var(--teal),#00a88a);border:none;color:#fff;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;cursor:pointer;transition:all .2s;box-shadow:0 8px 24px rgba(0,212,170,.3);}
+.btn-teal:active{transform:scale(.97);}
+.btn-blue{width:100%;padding:16px;border-radius:16px;background:linear-gradient(135deg,var(--blue),#2a7ee0);border:none;color:#fff;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;cursor:pointer;transition:all .2s;box-shadow:0 8px 24px rgba(74,158,255,.3);}
+.btn-blue:active{transform:scale(.97);}
+
+/* SECTION TITLE */
+.stitle{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;padding:0 24px;margin-bottom:12px;}
+
+/* TOAST */
+.toast{position:absolute;top:58px;left:16px;right:16px;z-index:9999;background:var(--surface2);border:1px solid var(--teal);border-radius:14px;padding:12px 16px;font-size:13px;color:var(--text);font-weight:500;transform:translateY(-12px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);pointer-events:none;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.red{border-color:var(--accent);}
+
+/* MODAL */
+.modal-bg{position:absolute;inset:0;z-index:500;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .3s;}
+.modal-bg.open{opacity:1;pointer-events:all;}
+.modal-sheet{width:100%;background:var(--bg2);border-radius:28px 28px 0 0;border-top:1px solid var(--border);padding:28px 24px 40px;transform:translateY(100%);transition:transform .4s cubic-bezier(.34,1.56,.64,1);}
+.modal-bg.open .modal-sheet{transform:translateY(0);}
+.mhandle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 24px;}
+
+/* ── HOME ── */
+.bg-mesh{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.bg-mesh::before{content:'';position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(255,59,107,.07),transparent 70%);top:-100px;left:-100px;animation:fltA 8s ease-in-out infinite alternate;}
+.bg-mesh::after{content:'';position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(0,212,170,.05),transparent 70%);bottom:80px;right:-80px;animation:fltB 10s ease-in-out infinite alternate;}
+@keyframes fltA{from{transform:translate(0,0)}to{transform:translate(40px,60px)}}
+@keyframes fltB{from{transform:translate(0,0)}to{transform:translate(-30px,-50px)}}
+
+.safe-banner{position:relative;z-index:1;margin:0 24px 20px;background:linear-gradient(135deg,rgba(0,212,170,.1),rgba(0,212,170,.04));border:1px solid rgba(0,212,170,.25);border-radius:var(--radius);padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;overflow:hidden;}
+.safe-banner::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--teal);border-radius:4px 0 0 4px;}
+.pulse{width:10px;height:10px;border-radius:50%;background:var(--teal);flex-shrink:0;animation:pulseAnim 2s infinite;}
+@keyframes pulseAnim{0%{box-shadow:0 0 0 0 rgba(0,212,170,.6)}70%{box-shadow:0 0 0 8px rgba(0,212,170,0)}100%{box-shadow:0 0 0 0 rgba(0,212,170,0)}}
+
+.sos-section{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;padding:0 24px 24px;}
+.sos-outer{width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(255,59,107,.07),transparent 70%);display:flex;align-items:center;justify-content:center;cursor:pointer;animation:sosGlow 3s ease-in-out infinite;}
+@keyframes sosGlow{0%,100%{box-shadow:0 0 0 0 rgba(255,59,107,0)}50%{box-shadow:0 0 60px 20px rgba(255,59,107,.07)}}
+.sos-ring{width:155px;height:155px;border-radius:50%;border:2px solid rgba(255,59,107,.2);display:flex;align-items:center;justify-content:center;animation:rot 20s linear infinite;position:relative;}
+@keyframes rot{to{transform:rotate(360deg)}}
+.sos-ring::before{content:'';position:absolute;width:155px;height:155px;border-radius:50%;border:2px dashed rgba(255,59,107,.12);}
+.sos-btn{width:130px;height:130px;border-radius:50%;background:linear-gradient(145deg,#FF3B6B,#cc1a47);border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;box-shadow:0 20px 60px rgba(255,59,107,.35),inset 0 2px 4px rgba(255,255,255,.15);transition:all .15s;z-index:1;}
+.sos-btn:active{transform:scale(.92);}
+
+/* QUICK GRID */
+.qgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 24px;margin-bottom:28px;position:relative;z-index:1;}
+.qcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 16px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.qcard:active{transform:scale(.96);}
+.qcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.qcard.ct::before{background:var(--teal);}
+.qcard.cy::before{background:var(--yellow);}
+.qcard.cb::before{background:var(--blue);}
+.qcard.ca::before{background:var(--accent);}
+.qcard.cp::before{background:#b47fff;}
+.qcard-icon{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px;}
+.qcard.ct .qcard-icon{background:rgba(0,212,170,.12);}
+.qcard.cy .qcard-icon{background:rgba(255,184,0,.12);}
+.qcard.cb .qcard-icon{background:rgba(74,158,255,.12);}
+.qcard.ca .qcard-icon{background:rgba(255,59,107,.12);}
+.qcard.cp .qcard-icon{background:rgba(180,127,255,.12);}
+.qcard-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.qcard-sub{font-size:11px;color:var(--text2);line-height:1.4;}
+.qcard-badge{position:absolute;top:14px;right:14px;background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;}
+
+/* HORIZ SCROLL CARDS */
+.hscroll-wrap{margin-bottom:28px;position:relative;z-index:1;}
+.hscroll-head{display:flex;justify-content:space-between;align-items:center;padding:0 24px;margin-bottom:12px;}
+.see-all{font-size:13px;color:var(--accent);font-weight:600;cursor:pointer;}
+.hscroll{display:flex;gap:14px;padding:4px 24px;overflow-x:auto;scrollbar-width:none;}
+.hscroll::-webkit-scrollbar{display:none;}
+.tcard{flex-shrink:0;width:150px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 14px;cursor:pointer;transition:all .2s;position:relative;}
+.tcard:active{transform:scale(.96);}
+.tcard-av{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#1a2438,#2a3f66);display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:10px;border:2px solid var(--border);}
+.tcard-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px;}
+.tcard-type{font-size:11px;color:var(--text2);margin-bottom:8px;}
+.tcard-rec{font-size:11px;color:var(--teal);font-weight:500;}
+.vbadge{position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;}
+
+/* ALERTS */
+.alert-item{margin:0 24px 10px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;gap:12px;align-items:center;cursor:pointer;transition:all .2s;}
+.alert-item:active{transform:scale(.98);}
+.alert-item.ar{border-color:rgba(255,59,107,.3);}
+.alert-item.ay{border-color:rgba(255,184,0,.3);}
+.aldot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:2px;}
+.ar .aldot{background:var(--accent);box-shadow:0 0 6px var(--accent);}
+.ay .aldot{background:var(--yellow);box-shadow:0 0 6px var(--yellow);}
+.ag .aldot{background:var(--teal);box-shadow:0 0 6px var(--teal);}
+
+/* ── MAP ── */
+#screen-map{display:none;flex-direction:column;}
+#screen-map.active{display:flex;}
+.map-outer{flex:1;position:relative;overflow:hidden;min-height:0;background:#0a1628;}
+.map-wrap{position:absolute;inset:0;}
+.map-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(30,45,71,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(30,45,71,.35) 1px,transparent 1px);background-size:30px 30px;}
+.road{position:absolute;background:rgba(40,60,100,.55);border-radius:3px;}
+.hz{position:absolute;border-radius:50%;filter:blur(30px);animation:breathe 4s ease-in-out infinite alternate;}
+@keyframes breathe{from{opacity:.45;transform:scale(.95)}to{opacity:.75;transform:scale(1.05)}}
+.hz.hd{background:radial-gradient(circle,rgba(255,59,107,.55),rgba(255,59,107,0) 70%);}
+.hz.hw{background:radial-gradient(circle,rgba(255,184,0,.5),rgba(255,184,0,0) 70%);animation-delay:1s;}
+.hz.hs{background:radial-gradient(circle,rgba(0,212,170,.4),rgba(0,212,170,0) 70%);animation-delay:2s;}
+.pin{position:absolute;z-index:10;cursor:pointer;display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%);}
+.pin-dot{width:36px;height:36px;border-radius:50% 50% 50% 0;display:flex;align-items:center;justify-content:center;font-size:16px;transform:rotate(-45deg);box-shadow:0 4px 12px rgba(0,0,0,.4);}
+.pin-label{font-size:10px;font-weight:600;color:var(--text);background:rgba(8,12,20,.85);padding:2px 6px;border-radius:4px;white-space:nowrap;margin-top:4px;backdrop-filter:blur(4px);}
+.pin.pd .pin-dot{background:var(--accent);}
+.pin.pw .pin-dot{background:var(--yellow);}
+.pin.ps .pin-dot{background:var(--teal);}
+.pin.pu .pin-dot{background:var(--blue);animation:upulse 2s infinite;}
+@keyframes upulse{0%,100%{box-shadow:0 0 0 4px rgba(74,158,255,.3)}50%{box-shadow:0 0 0 10px rgba(74,158,255,.1)}}
+.area-tip{position:absolute;bottom:14px;left:14px;right:14px;z-index:25;background:var(--surface2);border-radius:16px;padding:14px 16px;display:flex;gap:12px;align-items:center;border:1px solid var(--border);transform:translateY(20px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);pointer-events:none;}
+.area-tip.show{transform:translateY(0);opacity:1;pointer-events:all;}
+.map-fab{position:absolute;right:16px;top:16px;z-index:30;width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#cc1a47);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:all .2s;box-shadow:0 6px 20px rgba(255,59,107,.4);}
+.map-fab:active{transform:scale(.9);}
+.leg{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:6px 12px;font-size:12px;color:var(--text2);cursor:pointer;}
+.ldot{width:10px;height:10px;border-radius:50%;}
+.ldot.d{background:var(--accent);}
+.ldot.w{background:var(--yellow);}
+.ldot.s{background:var(--teal);}
+.risk-cur{margin:0 20px 12px;padding:14px 18px;border-radius:16px;display:flex;align-items:center;gap:12px;cursor:pointer;}
+.risk-cur.rg{background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.3);}
+.risk-cur.ry{background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.3);}
+.risk-cur.rr{background:rgba(255,59,107,.1);border:1px solid rgba(255,59,107,.3);}
+.risk-val{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;}
+.risk-cur.rg .risk-val{color:var(--teal);}
+.risk-cur.ry .risk-val{color:var(--yellow);}
+.risk-cur.rr .risk-val{color:var(--accent);}
+.achips{display:flex;gap:10px;padding:0 20px 12px;overflow-x:auto;scrollbar-width:none;}
+.achips::-webkit-scrollbar{display:none;}
+.achip{flex-shrink:0;padding:8px 14px;border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;}
+.achip:active{transform:scale(.95);}
+.achip.r{background:rgba(255,59,107,.15);border:1px solid rgba(255,59,107,.3);color:var(--accent);}
+.achip.y{background:rgba(255,184,0,.15);border:1px solid rgba(255,184,0,.3);color:var(--yellow);}
+.achip.g{background:rgba(0,212,170,.15);border:1px solid rgba(0,212,170,.3);color:var(--teal);}
+
+/* ── TRUSTED ── */
+.search-wrap{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:0 16px;height:48px;margin:0 24px 14px;}
+.search-wrap input{flex:1;background:none;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);}
+.search-wrap input::placeholder{color:var(--text3);}
+.chip{flex-shrink:0;padding:8px 16px;border-radius:100px;background:var(--surface);border:1px solid var(--border);font-size:13px;color:var(--text2);font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.chip.on{background:rgba(0,212,170,.15);border-color:var(--teal);color:var(--teal);}
+.chip:active{transform:scale(.95);}
+.stats-bar{margin:0 24px 20px;background:linear-gradient(135deg,rgba(0,212,170,.07),rgba(74,158,255,.07));border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;display:grid;grid-template-columns:1fr 1fr 1fr;}
+.stat-item{text-align:center;}
+.stat-item:not(:last-child){border-right:1px solid var(--border);}
+.stat-num{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;}
+.lcard{margin:0 24px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden;}
+.lcard:active{transform:scale(.98);border-color:rgba(0,212,170,.4);}
+.lcard-top{display:flex;align-items:flex-start;gap:14px;margin-bottom:14px;}
+.lcard-av{width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#1a2c52,#0d1f3c);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;border:1.5px solid var(--border);position:relative;}
+.vring{position:absolute;inset:-3px;border-radius:19px;border:2px solid var(--teal);opacity:.6;}
+.lcard-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px;}
+.lcard-badge{display:inline-flex;align-items:center;gap:5px;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:600;}
+.lcard-veh{font-size:12px;color:var(--text2);margin-top:6px;font-family:monospace;letter-spacing:1px;background:var(--surface2);padding:2px 8px;border-radius:6px;display:inline-block;}
+.rec-btn{border:none;border-radius:12px;padding:10px 14px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;}
+.rec-btn:active{transform:scale(.88);}
+.lcard-bot{display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--border);}
+.rec-row{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;}
+.rec-avs{display:flex;}
+.rec-av{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#ff8fa3);border:2px solid var(--surface);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;margin-left:-6px;}
+.rec-av:first-child{margin-left:0;}
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.type-opt{padding:12px;border-radius:12px;background:var(--surface);border:1.5px solid var(--border);cursor:pointer;text-align:center;transition:all .2s;}
+.type-opt.on{border-color:var(--teal);background:rgba(0,212,170,.1);}
+.type-opt:active{transform:scale(.96);}
+.type-opt .te{font-size:22px;margin-bottom:4px;}
+.type-opt .tn{font-size:12px;color:var(--text2);}
+.type-opt.on .tn{color:var(--teal);}
+
+/* ── REPORT ── */
+.tab-sw{display:flex;margin:0 24px 16px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:4px;gap:4px;flex-shrink:0;}
+.tbtn{flex:1;padding:10px 8px;border-radius:10px;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--text2);transition:all .2s;}
+.tbtn.onr{background:rgba(255,59,107,.15);color:var(--accent);}
+.tbtn.onb{background:rgba(74,158,255,.15);color:var(--blue);}
+.tab-pane{display:none;}
+.tab-pane.on{display:block;}
+.inc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 24px 20px;}
+.inc-opt{padding:16px 14px;border-radius:16px;background:var(--surface);border:2px solid var(--border);cursor:pointer;transition:all .2s;text-align:center;}
+.inc-opt:active{transform:scale(.96);}
+.inc-opt.on{border-color:var(--accent);background:rgba(255,59,107,.1);}
+.inc-opt .ie{font-size:28px;margin-bottom:8px;}
+.inc-opt .il{font-size:13px;font-weight:600;color:var(--text2);}
+.inc-opt.on .il{color:var(--accent);}
+.ev-box{background:var(--surface);border:2px dashed var(--border);border-radius:16px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;margin:0 24px 20px;}
+.ev-box:active{transform:scale(.98);border-color:var(--accent);}
+
+/* ── PROFILE ── */
+.contact-card{display:flex;justify-content:space-between;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:10px;transition:all .2s;}
+.contact-left{display:flex;align-items:center;gap:12px;}
+.cav{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff;flex-shrink:0;}
+.cname{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text);}
+.cphone{font-size:12px;color:var(--text2);margin-top:2px;font-family:monospace;}
+.crel{font-size:11px;color:var(--text3);margin-top:3px;}
+.cbadge{background:rgba(255,59,107,.15);border:1px solid rgba(255,59,107,.3);color:var(--accent);font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;}
+.setting-row{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all .2s;}
+.setting-row:active{transform:scale(.98);}
+.tog{width:44px;height:24px;border-radius:12px;background:var(--border);flex-shrink:0;position:relative;transition:background .2s;cursor:pointer;}
+.tog::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s;}
+.tog.on{background:var(--teal);}
+.tog.on::after{transform:translateX(20px);}
+
+/* ── SOS ACTIVE ── */
+@keyframes sosping{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.5);opacity:0}}
+.notif-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.notif-row:last-child{margin-bottom:0;}
+.nav{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff;flex-shrink:0;}
+
+/* ── UNIQUE: SAFE WORD ── */
+.safeword-box{margin:0 24px 20px;background:linear-gradient(135deg,rgba(180,127,255,.1),rgba(180,127,255,.04));border:1px solid rgba(180,127,255,.3);border-radius:var(--radius);padding:18px;}
+.safeword-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#b47fff;margin-bottom:6px;}
+.safeword-current{font-family:monospace;font-size:22px;font-weight:700;color:var(--text);letter-spacing:3px;background:var(--surface2);border-radius:10px;padding:10px 16px;text-align:center;margin:10px 0;}
+
+/* ── UNIQUE: JOURNEY MODE ── */
+.journey-card{margin:0 24px 20px;background:linear-gradient(135deg,rgba(74,158,255,.1),rgba(74,158,255,.04));border:1px solid rgba(74,158,255,.3);border-radius:var(--radius);padding:18px;}
+
+/* FADE IN */
+.fi{opacity:0;transform:translateY(16px);animation:fi .4s ease forwards;}
+@keyframes fi{to{opacity:1;transform:translateY(0)}}
+.d1{animation-delay:.05s}.d2{animation-delay:.1s}.d3{animation-delay:.15s}
+.d4{animation-delay:.2s}.d5{animation-delay:.25s}.d6{animation-delay:.3s}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════
+     LOGIN
+═══════════════════════════ -->
+<div class="screen active" id="screen-login">
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse at top,rgba(255,59,107,.12),transparent 60%),radial-gradient(ellipse at bottom,rgba(0,212,170,.08),transparent 60%);"></div>
+  <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;padding:60px 32px 40px;height:100%;overflow-y:auto;">
+    <div style="font-size:52px;margin-bottom:14px;" class="fi">🛡️</div>
+    <div style="font-family:'Syne',sans-serif;font-size:32px;font-weight:800;margin-bottom:6px;" class="fi d1">Trust<span style="color:var(--accent)">Trail</span></div>
+    <div style="font-size:14px;color:var(--text2);margin-bottom:44px;text-align:center;" class="fi d2">A path built on trusted recommendations</div>
+    <div style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:28px 24px;" class="fi d3">
+      <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:20px;" id="login-title">Welcome back 👋</div>
+      <input class="finput" style="margin-bottom:12px;" placeholder="Phone number" type="tel" id="login-phone">
+      <input class="finput" style="margin-bottom:12px;" placeholder="Password" type="password" id="login-pass">
+      <input class="finput" style="margin-bottom:12px;display:none;" placeholder="Your name" id="login-name">
+      <button class="btn-accent" onclick="doLogin()">Continue →</button>
+      <div style="margin-top:16px;text-align:center;font-size:13px;color:var(--text2);cursor:pointer;" onclick="toggleLoginMode()">New user? <span style="color:var(--teal);font-weight:600;" id="login-toggle">Create account</span></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:24px;font-size:12px;color:var(--text3);" class="fi d5">
+      <div style="flex:1;height:1px;background:var(--border);"></div>🔒 End-to-end encrypted
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     HOME
+═══════════════════════════ -->
+<div class="screen" id="screen-home">
+  <div class="bg-mesh"></div>
+  <div class="sbar" style="position:relative;z-index:1;"><span class="sbar-t">9:41</span><span style="font-size:12px;color:var(--text2)">🔒 ●●●</span></div>
+  <div class="scroll" style="position:relative;z-index:1;padding-bottom:80px;">
+    <!-- HEADER -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:8px 24px 16px;" class="fi">
+      <div>
+        <div style="font-size:13px;color:var(--text2);">Good evening,</div>
+        <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;line-height:1.1;margin-top:2px;">Priya <span style="color:var(--accent);">Sharma</span> 👋</div>
+      </div>
+      <div onclick="goTo('screen-profile')" style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#FF6B8A);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:17px;box-shadow:0 0 0 3px rgba(255,59,107,.2);cursor:pointer;position:relative;">P
+        <div style="position:absolute;top:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:var(--teal);border:2px solid var(--bg);"></div>
+      </div>
+    </div>
+    <!-- SAFE BANNER -->
+    <div class="safe-banner fi d1" onclick="toast('📍 Location sharing active')">
+      <div class="pulse"></div>
+      <div><div style="font-size:11px;color:var(--teal);font-weight:600;letter-spacing:1px;text-transform:uppercase;">Current Status</div><div style="font-size:15px;color:var(--text);font-weight:500;margin-top:1px;">You are safe · Anna Nagar, Chennai</div></div>
+      <div style="margin-left:auto;color:var(--teal);font-size:20px;">›</div>
+    </div>
+    <!-- SOS -->
+    <div class="sos-section fi d2">
+      <div class="sos-outer" onclick="openSOS()">
+        <div class="sos-ring">
+          <button class="sos-btn" onclick="openSOS()">
+            <div style="font-size:36px;line-height:1;">🆘</div>
+            <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff;letter-spacing:3px;">SOS</div>
+          </button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-top:12px;">Tap to send emergency alert to family</div>
+    </div>
+    <!-- QUICK ACTIONS -->
+    <div class="stitle fi d3">Quick Actions</div>
+    <div class="qgrid fi d3">
+      <div class="qcard ct" onclick="goTo('screen-map')"><div class="qcard-icon">🗺️</div><div class="qcard-title">Safety Map</div><div class="qcard-sub">View risk zones</div></div>
+      <div class="qcard cy" onclick="goTo('screen-trusted')"><div class="qcard-icon">🛡️</div><div class="qcard-title">Trusted Travellers</div><div class="qcard-sub">Verified drivers</div><div class="qcard-badge">NEW</div></div>
+      <div class="qcard cb" onclick="goTo('screen-journey')"><div class="qcard-icon">🚗</div><div class="qcard-title">Journey Mode</div><div class="qcard-sub">Share live trip</div><div class="qcard-badge">UNIQUE</div></div>
+      <div class="qcard ca" onclick="goTo('screen-report')"><div class="qcard-icon">📢</div><div class="qcard-title">Report</div><div class="qcard-sub">Anonymous & instant</div></div>
+      <div class="qcard cp" onclick="goTo('screen-safeword')"><div class="qcard-icon">🔑</div><div class="qcard-title">Safe Word</div><div class="qcard-sub">Silent SOS trigger</div><div class="qcard-badge">UNIQUE</div></div>
+      <div class="qcard ca" onclick="goTo('screen-report'); setTimeout(()=>switchTab('complaint'),300)"><div class="qcard-icon">📄</div><div class="qcard-title">AI Complaint</div><div class="qcard-sub">Auto-generate FIR</div></div>
+    </div>
+    <!-- TRUSTED NEARBY -->
+    <div class="hscroll-wrap fi d4">
+      <div class="hscroll-head"><div class="stitle" style="padding:0;margin:0;">Trusted Nearby</div><div class="see-all" onclick="goTo('screen-trusted')">See all →</div></div>
+      <div class="hscroll">
+        <div class="tcard" onclick="toast('Ravi — Trusted Auto ⭐⭐⭐⭐⭐')"><div class="vbadge">✓</div><div class="tcard-av">🚖</div><div class="tcard-name">Ravi K.</div><div class="tcard-type">Auto · TN09 AB1234</div><div class="tcard-rec">👩 12 women</div></div>
+        <div class="tcard" onclick="toast('Lakshmi Stays — Trusted Homestay')"><div class="vbadge">✓</div><div class="tcard-av">🏠</div><div class="tcard-name">Lakshmi Stays</div><div class="tcard-type">Homestay · T.Nagar</div><div class="tcard-rec">👩 8 women</div></div>
+        <div class="tcard" onclick="toast('Meena Shop — Safe Stop 24/7')"><div class="vbadge">✓</div><div class="tcard-av">🛒</div><div class="tcard-name">Meena Shop</div><div class="tcard-type">Safe Shop · Adyar</div><div class="tcard-rec">👩 6 women</div></div>
+        <div class="tcard" onclick="goTo('screen-trusted')"><div class="tcard-av" style="background:rgba(255,59,107,.1);">➕</div><div class="tcard-name" style="color:var(--accent);">Add New</div><div class="tcard-type">Recommend safe contact</div></div>
+      </div>
+    </div>
+    <!-- ALERTS -->
+    <div class="fi d5" style="margin-bottom:28px;">
+      <div class="stitle">Area Alerts</div>
+      <div class="alert-item ar" onclick="goTo('screen-map')"><div class="aldot"></div><div><div style="font-size:13px;font-weight:600;">⚠️ Anna Nagar Metro</div><div style="font-size:11px;color:var(--text2);">2 reports in last hour</div></div><div style="margin-left:auto;font-size:11px;color:var(--text3);">45m</div></div>
+      <div class="alert-item ay" onclick="goTo('screen-map')"><div class="aldot"></div><div><div style="font-size:13px;font-weight:600;">🟡 Vadapalani Signal</div><div style="font-size:11px;color:var(--text2);">Low lighting reported</div></div><div style="margin-left:auto;font-size:11px;color:var(--text3);">2h</div></div>
+      <div class="alert-item ag" onclick="goTo('screen-map')"><div class="aldot" style="background:var(--teal);box-shadow:0 0 6px var(--teal);"></div><div><div style="font-size:13px;font-weight:600;">✅ Adyar Area</div><div style="font-size:11px;color:var(--text2);">Community verified safe</div></div><div style="margin-left:auto;font-size:11px;color:var(--text3);">3h</div></div>
+    </div>
+  </div>
+  <div class="bnav">
+    <div class="bni on" onclick="goTo('screen-home')"><div class="bni-icon">🏠</div><div class="bni-label">Home</div><div class="bni-dot"></div></div>
+    <div class="bni" onclick="goTo('screen-map')"><div class="bni-icon">🗺️</div><div class="bni-label">Map</div></div>
+    <div class="bni" onclick="goTo('screen-trusted')"><div class="bni-icon">🛡️</div><div class="bni-label">Travellers</div></div>
+    <div class="bni" onclick="goTo('screen-report')"><div class="bni-icon">📢</div><div class="bni-label">Report</div></div>
+    <div class="bni" onclick="goTo('screen-profile')"><div class="bni-icon">👤</div><div class="bni-label">Profile</div></div>
+  </div>
+  <!-- SOS MODAL -->
+  <div class="modal-bg" id="sos-modal">
+    <div class="modal-sheet">
+      <div class="mhandle"></div>
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;text-align:center;margin-bottom:6px;"><span style="color:var(--accent);">SOS</span> Alert Ready</div>
+      <div style="font-size:14px;color:var(--text2);text-align:center;margin-bottom:24px;">Your live location will be sent to all family contacts</div>
+      <div style="width:100px;height:100px;margin:0 auto 24px;position:relative;">
+        <svg width="100" height="100" viewBox="0 0 100 100" style="transform:rotate(-90deg)">
+          <circle cx="50" cy="50" r="45" fill="none" stroke="var(--border)" stroke-width="6"/>
+          <circle id="cfg" cx="50" cy="50" r="45" fill="none" stroke="var(--accent)" stroke-width="6" stroke-dasharray="283" stroke-dashoffset="0" stroke-linecap="round" style="transition:stroke-dashoffset 1s linear;"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:var(--accent);" id="cnum">5</div>
+      </div>
+      <div style="display:flex;gap:12px;">
+        <button onclick="cancelSOS()" style="flex:1;padding:16px;border-radius:16px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'Syne',sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Cancel</button>
+        <button onclick="sendSOS()" style="flex:2;padding:16px;border-radius:16px;background:linear-gradient(135deg,var(--accent),#cc1a47);border:none;color:#fff;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 8px 24px rgba(255,59,107,.3);">🚨 Send SOS Now</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     SOS ACTIVE
+═══════════════════════════ -->
+<div class="screen" id="screen-sos-active">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;overflow-y:auto;">
+    <div style="position:relative;width:160px;height:160px;display:flex;align-items:center;justify-content:center;margin-bottom:22px;">
+      <div style="position:absolute;inset:0;border-radius:50%;background:rgba(255,59,107,.1);animation:sosping 1.8s ease-out infinite;"></div>
+      <div style="position:absolute;inset:14px;border-radius:50%;background:rgba(255,59,107,.15);animation:sosping 1.8s ease-out infinite .5s;"></div>
+      <div style="position:absolute;inset:28px;border-radius:50%;background:rgba(255,59,107,.2);animation:sosping 1.8s ease-out infinite 1s;"></div>
+      <div style="position:relative;z-index:1;width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#cc1a47);display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 0 30px rgba(255,59,107,.5);">🚨</div>
+    </div>
+    <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--accent);letter-spacing:2px;margin-bottom:6px;">SOS ACTIVE</div>
+    <div style="font-size:14px;color:var(--text2);text-align:center;margin-bottom:24px;line-height:1.5;">Your family is being notified<br>with your live location</div>
+    <!-- NOTIFIED CONTACTS -->
+    <div style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:18px;margin-bottom:14px;">
+      <div style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">NOTIFIED CONTACTS</div>
+      <div id="sos-notified-list"><div style="color:var(--text2);font-size:13px;text-align:center;padding:8px;">No contacts — add them in Profile</div></div>
+    </div>
+    <!-- POLICE NOTE -->
+    <div style="width:100%;background:rgba(255,184,0,.08);border:1px solid rgba(255,184,0,.25);border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start;">
+      <div style="font-size:20px;flex-shrink:0;">🚔</div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--yellow);margin-bottom:4px;">Police Helpline: 100 / 1091</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.5;">TrustTrail alerts your <strong style="color:var(--text);">family contacts</strong>. To contact police directly, call <strong style="color:var(--yellow);">100</strong> or Women helpline <strong style="color:var(--yellow);">1091</strong>. Your evidence is auto-saved.</div>
+      </div>
+    </div>
+    <!-- LIVE LOCATION -->
+    <div style="width:100%;background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.25);border-radius:14px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;">
+      <div style="width:10px;height:10px;border-radius:50%;background:var(--teal);flex-shrink:0;animation:pulseAnim 1.5s infinite;"></div>
+      <div><div style="font-size:13px;font-weight:600;color:var(--teal);">Live location ON · updating every 5s</div><div style="font-size:12px;color:var(--text2);margin-top:2px;">Anna Nagar, Chennai</div></div>
+    </div>
+    <button onclick="resolveSOS()" class="btn-teal" style="font-size:18px;padding:18px;">✅ I'm Safe — Stop SOS</button>
+    <div style="font-size:12px;color:var(--text3);margin-top:10px;text-align:center;">Tap above when you are safe</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     SAFETY MAP
+═══════════════════════════ -->
+<div class="screen" id="screen-map">
+  <div style="flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 20px 14px;">
+    <div class="sbar" style="padding:6px 0 10px;"><span class="sbar-t">9:41</span><span style="font-size:12px;color:var(--text2);">🔒</span></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+      <div class="back" onclick="goBack()">←</div>
+      <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;">Safety <span style="color:var(--teal);">Map</span></div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <div class="leg"><div class="ldot d"></div>High Risk</div>
+      <div class="leg"><div class="ldot w"></div>Moderate</div>
+      <div class="leg"><div class="ldot s"></div>Safe Zone</div>
+    </div>
+  </div>
+  <div class="map-outer">
+    <div class="map-wrap">
+      <div class="map-grid"></div>
+      <div class="road" style="width:2px;height:100%;top:0;left:35%;opacity:.4;"></div>
+      <div class="road" style="width:2px;height:100%;top:0;left:65%;opacity:.4;"></div>
+      <div class="road" style="height:2px;width:100%;top:35%;left:0;opacity:.4;"></div>
+      <div class="road" style="height:2px;width:100%;top:62%;left:0;opacity:.4;"></div>
+      <div class="road" style="width:3px;height:70%;top:15%;left:50%;opacity:.5;"></div>
+      <div class="hz hd" style="width:160px;height:160px;top:10%;left:10%;"></div>
+      <div class="hz hw" style="width:140px;height:140px;top:40%;left:52%;"></div>
+      <div class="hz hw" style="width:120px;height:120px;top:15%;left:58%;"></div>
+      <div class="hz hs" style="width:180px;height:180px;top:45%;left:2%;"></div>
+      <div class="hz hs" style="width:140px;height:140px;top:55%;left:42%;"></div>
+      <div class="pin pd" style="top:26%;left:24%;" onclick="showArea('⚠️ Anna Nagar Metro','HIGH RISK — 2 reports last hour','rr')"><div class="pin-dot">⚠️</div><div class="pin-label">Anna Nagar Metro</div></div>
+      <div class="pin pw" style="top:50%;left:60%;" onclick="showArea('🟡 Vadapalani','MODERATE — Low lighting','ry')"><div class="pin-dot">🟡</div><div class="pin-label">Vadapalani</div></div>
+      <div class="pin pw" style="top:22%;left:66%;" onclick="showArea('🟡 Koyambedu','MODERATE — Crowded','ry')"><div class="pin-dot">🟡</div><div class="pin-label">Koyambedu</div></div>
+      <div class="pin ps" style="top:58%;left:16%;" onclick="showArea('✅ T. Nagar','SAFE — Community verified','rg')"><div class="pin-dot">✅</div><div class="pin-label">T. Nagar</div></div>
+      <div class="pin ps" style="top:64%;left:52%;" onclick="showArea('✅ Adyar','SAFE — Low incidents','rg')"><div class="pin-dot">✅</div><div class="pin-label">Adyar</div></div>
+      <div class="pin pu" style="top:42%;left:38%;" onclick="showArea('📍 You are here','SAFE — Anna Nagar','rg')"><div class="pin-dot">📍</div><div class="pin-label">You are here</div></div>
+    </div>
+    <div class="area-tip" id="area-tip">
+      <div id="at-icon" style="font-size:24px;">⚠️</div>
+      <div><div id="at-title" style="font-size:14px;font-weight:700;color:var(--text);"></div><div id="at-sub" style="font-size:12px;color:var(--text2);margin-top:2px;"></div></div>
+      <div onclick="document.getElementById('area-tip').classList.remove('show')" style="margin-left:auto;cursor:pointer;color:var(--text3);font-size:18px;">✕</div>
+    </div>
+    <div class="map-fab" onclick="goTo('screen-report')">📢</div>
+  </div>
+  <div style="flex-shrink:0;background:rgba(8,12,20,.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);">
+    <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 12px;"></div>
+    <div class="risk-cur rg" id="risk-cur" onclick="toast('Your current zone info')">
+      <div style="font-size:26px;">✅</div>
+      <div><div style="font-size:12px;color:var(--text2);margin-bottom:2px;">Your current area</div><div class="risk-val" id="risk-val">Anna Nagar — Safe Zone</div></div>
+    </div>
+    <div class="achips">
+      <div class="achip r" onclick="showArea('⚠️ Anna Nagar Metro','HIGH RISK — 2 reports last hour','rr')">🔴 Anna Nagar</div>
+      <div class="achip y" onclick="showArea('🟡 Vadapalani','MODERATE — Low lighting','ry')">🟡 Vadapalani</div>
+      <div class="achip g" onclick="showArea('✅ Adyar','SAFE — Low incidents','rg')">🟢 Adyar</div>
+      <div class="achip g" onclick="showArea('✅ T. Nagar','SAFE — Verified','rg')">🟢 T. Nagar</div>
+    </div>
+    <div class="bnav">
+      <div class="bni" onclick="goTo('screen-home')"><div class="bni-icon">🏠</div><div class="bni-label">Home</div></div>
+      <div class="bni on-t"><div class="bni-icon">🗺️</div><div class="bni-label">Map</div><div class="bni-dot"></div></div>
+      <div class="bni" onclick="goTo('screen-trusted')"><div class="bni-icon">🛡️</div><div class="bni-label">Travellers</div></div>
+      <div class="bni" onclick="goTo('screen-report')"><div class="bni-icon">📢</div><div class="bni-label">Report</div></div>
+      <div class="bni" onclick="goTo('screen-profile')"><div class="bni-icon">👤</div><div class="bni-label">Profile</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     TRUSTED TRAVELLERS
+═══════════════════════════ -->
+<div class="screen" id="screen-trusted">
+  <div class="sbar"><span class="sbar-t">9:41</span><span style="font-size:12px;color:var(--text2);">🔒</span></div>
+  <div class="phead fi">
+    <div class="back" onclick="goBack()">←</div>
+    <div style="flex:1;"><div class="ptitle">Trusted <span>Network</span></div><div class="psub">Community-verified safe contacts</div></div>
+    <div onclick="openAddModal()" style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--teal),#00a88a);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:#fff;font-weight:700;box-shadow:0 4px 16px rgba(0,212,170,.3);">+</div>
+  </div>
+  <div class="search-wrap fi d1"><span style="font-size:18px;color:var(--text2);">🔍</span><input placeholder="Search name, area, vehicle..." oninput="filterTrusted(this.value)"></div>
+  <div style="display:flex;gap:8px;padding:0 24px 14px;overflow-x:auto;scrollbar-width:none;" class="fi d1">
+    <div class="chip on" onclick="filterChip(this,'all')">All</div>
+    <div class="chip" onclick="filterChip(this,'auto')">🚖 Auto</div>
+    <div class="chip" onclick="filterChip(this,'cab')">🚕 Cab</div>
+    <div class="chip" onclick="filterChip(this,'homestay')">🏠 Homestay</div>
+    <div class="chip" onclick="filterChip(this,'shop')">🛒 Shop</div>
+    <div class="chip" onclick="filterChip(this,'medical')">🏥 Medical</div>
+  </div>
+  <div class="stats-bar fi d2">
+    <div class="stat-item"><div class="stat-num" style="color:var(--teal);">247</div><div style="font-size:11px;color:var(--text2);">Listings</div></div>
+    <div class="stat-item"><div class="stat-num" style="color:var(--yellow);">1.2k</div><div style="font-size:11px;color:var(--text2);">Recommendations</div></div>
+    <div class="stat-item"><div class="stat-num" style="color:var(--accent);">98%</div><div style="font-size:11px;color:var(--text2);">Verified</div></div>
+  </div>
+  <div class="scroll" id="trusted-list">
+    <div class="stitle">Most Recommended</div>
+    <div class="lcard fi d3" data-type="auto"><div class="lcard-top"><div class="lcard-av">🚖<div class="vring"></div></div><div style="flex:1;min-width:0;"><div class="lcard-name">Ravi Kumar</div><div class="lcard-badge" style="background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.25);color:var(--blue);">🚖 Auto Driver</div><div class="lcard-veh">TN09 AB 1234</div></div><button class="rec-btn" style="background:linear-gradient(135deg,var(--teal),#00a88a);box-shadow:0 4px 12px rgba(0,212,170,.25);" onclick="recBtn(this,'Ravi Kumar')"><div style="font-size:18px;">👩</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:#fff;">12</div></button></div><div class="lcard-bot"><div class="rec-row" style="color:var(--teal);"><div class="rec-avs"><div class="rec-av">P</div><div class="rec-av">S</div><div class="rec-av">A</div></div>12 women recommended</div><div style="font-size:12px;color:var(--text3);">📍 Anna Nagar</div></div></div>
+    <div class="lcard fi d4" data-type="cab"><div class="lcard-top"><div class="lcard-av">🚕<div class="vring"></div></div><div style="flex:1;min-width:0;"><div class="lcard-name">Murugan Cabs</div><div class="lcard-badge" style="background:rgba(255,59,107,.1);border:1px solid rgba(255,59,107,.25);color:var(--accent);">🚕 Cab Driver</div><div class="lcard-veh">TN05 CK 5678</div></div><button class="rec-btn" style="background:linear-gradient(135deg,var(--accent),#cc1a47);box-shadow:0 4px 12px rgba(255,59,107,.25);" onclick="recBtn(this,'Murugan Cabs')"><div style="font-size:18px;">👩</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:#fff;">15</div></button></div><div class="lcard-bot"><div class="rec-row" style="color:var(--accent);"><div class="rec-avs"><div class="rec-av">R</div><div class="rec-av">V</div></div>15 women recommended</div><div style="font-size:12px;color:var(--text3);">📍 Adyar</div></div></div>
+    <div class="lcard fi d4" data-type="homestay"><div class="lcard-top"><div class="lcard-av">🏠<div class="vring"></div></div><div style="flex:1;min-width:0;"><div class="lcard-name">Lakshmi Stays</div><div class="lcard-badge" style="background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.25);color:var(--yellow);">🏠 Homestay</div><div class="lcard-veh">Women-only floors</div></div><button class="rec-btn" style="background:linear-gradient(135deg,var(--yellow),#cc9200);box-shadow:0 4px 12px rgba(255,184,0,.25);" onclick="recBtn(this,'Lakshmi Stays')"><div style="font-size:18px;">👩</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:#fff;">8</div></button></div><div class="lcard-bot"><div class="rec-row" style="color:var(--yellow);"><div class="rec-avs"><div class="rec-av" style="background:linear-gradient(135deg,var(--yellow),#cc9200);">M</div></div>8 women recommended</div><div style="font-size:12px;color:var(--text3);">📍 T. Nagar</div></div></div>
+    <div class="lcard fi d5" data-type="medical"><div class="lcard-top"><div class="lcard-av">🏥<div class="vring"></div></div><div style="flex:1;min-width:0;"><div class="lcard-name">Apollo Clinic</div><div class="lcard-badge" style="background:rgba(180,127,255,.1);border:1px solid rgba(180,127,255,.25);color:#b47fff;">🏥 Medical</div><div class="lcard-veh">Women doctors on call</div></div><button class="rec-btn" style="background:linear-gradient(135deg,#b47fff,#8a4ff0);box-shadow:0 4px 12px rgba(180,127,255,.25);" onclick="recBtn(this,'Apollo Clinic')"><div style="font-size:18px;">👩</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:#fff;">21</div></button></div><div class="lcard-bot"><div class="rec-row" style="color:#b47fff;"><div class="rec-avs"><div class="rec-av" style="background:linear-gradient(135deg,#b47fff,#8a4ff0);">A</div></div>21 women recommended</div><div style="font-size:12px;color:var(--text3);">📍 Greams Rd</div></div></div>
+    <div style="height:20px;"></div>
+  </div>
+  <div class="bnav">
+    <div class="bni" onclick="goTo('screen-home')"><div class="bni-icon">🏠</div><div class="bni-label">Home</div></div>
+    <div class="bni" onclick="goTo('screen-map')"><div class="bni-icon">🗺️</div><div class="bni-label">Map</div></div>
+    <div class="bni on-t"><div class="bni-icon">🛡️</div><div class="bni-label">Travellers</div><div class="bni-dot"></div></div>
+    <div class="bni" onclick="goTo('screen-report')"><div class="bni-icon">📢</div><div class="bni-label">Report</div></div>
+    <div class="bni" onclick="goTo('screen-profile')"><div class="bni-icon">👤</div><div class="bni-label">Profile</div></div>
+  </div>
+  <!-- ADD LISTING MODAL -->
+  <div class="modal-bg" id="add-modal">
+    <div class="modal-sheet" style="max-height:85vh;overflow-y:auto;">
+      <div class="mhandle"></div>
+      <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:6px;">Add to <span style="color:var(--teal);">Trust Network</span></div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:20px;">Help other women by recommending a safe contact</div>
+      <div class="fgroup"><label class="flabel">Name</label><input class="finput" id="new-name" placeholder="e.g. Ravi Kumar"></div>
+      <div class="fgroup"><label class="flabel">Type</label>
+        <div class="type-grid"><div class="type-opt on" onclick="selType(this)"><div class="te">🚖</div><div class="tn">Auto Driver</div></div><div class="type-opt" onclick="selType(this)"><div class="te">🚕</div><div class="tn">Cab Driver</div></div><div class="type-opt" onclick="selType(this)"><div class="te">🏠</div><div class="tn">Homestay</div></div><div class="type-opt" onclick="selType(this)"><div class="te">🛒</div><div class="tn">Safe Shop</div></div></div>
+      </div>
+      <div class="fgroup"><label class="flabel">Vehicle Number</label><input class="finput" id="new-veh" placeholder="e.g. TN09 AB 1234" style="font-family:monospace;letter-spacing:1px;"></div>
+      <div class="fgroup"><label class="flabel">Area</label><input class="finput" id="new-area" placeholder="e.g. Anna Nagar, Chennai"></div>
+      <button class="btn-teal" style="margin-top:8px;" onclick="submitAdd()">✓ Add to Trust Network</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     REPORT + COMPLAINT
+═══════════════════════════ -->
+<div class="screen" id="screen-report">
+  <div class="sbar"><span class="sbar-t">9:41</span><span style="font-size:12px;color:var(--text2);">🔒</span></div>
+  <div class="phead fi">
+    <div class="back" onclick="goBack()">←</div>
+    <div><div class="ptitle red">Report & <span>Complaint</span></div></div>
+  </div>
+  <div class="tab-sw fi">
+    <button class="tbtn onr" id="tbtn-report" onclick="switchTab('report')">📢 Report</button>
+    <button class="tbtn" id="tbtn-complaint" onclick="switchTab('complaint')">📄 AI Complaint</button>
+  </div>
+  <div class="scroll">
+    <!-- REPORT PANE -->
+    <div class="tab-pane on" id="pane-report">
+      <div style="margin:0 24px 16px;background:rgba(0,212,170,.07);border:1px solid rgba(0,212,170,.2);border-radius:12px;padding:10px 16px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--teal);"><span style="font-size:18px;">🔒</span><span><strong>100% Anonymous</strong> — Identity never revealed</span></div>
+      <div class="stitle fi">What happened?</div>
+      <div class="inc-grid fi d1">
+        <div class="inc-opt on" onclick="selInc(this)"><div class="ie">😰</div><div class="il">Being Followed</div></div>
+        <div class="inc-opt" onclick="selInc(this)"><div class="ie">🚨</div><div class="il">Harassment</div></div>
+        <div class="inc-opt" onclick="selInc(this)"><div class="ie">🚖</div><div class="il">Unsafe Driver</div></div>
+        <div class="inc-opt" onclick="selInc(this)"><div class="ie">👀</div><div class="il">Suspicious</div></div>
+      </div>
+      <div style="padding:0 24px;">
+        <div class="fgroup fi d2"><label class="flabel">Location</label><input class="finput" id="rep-loc" placeholder="e.g. Anna Nagar Metro Station"></div>
+        <div class="fgroup fi d3"><label class="flabel">Description (optional)</label><textarea class="ftextarea" id="rep-desc" placeholder="Describe briefly..."></textarea></div>
+      </div>
+      <div class="ev-box fi d3" onclick="toast('📎 Photo/Video evidence attached!')">
+        <div style="font-size:32px;margin-bottom:8px;">📎</div>
+        <div style="font-size:14px;color:var(--text2);">Add Evidence</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px;">Photo · Video · Audio</div>
+      </div>
+      <div style="padding:0 24px;margin-bottom:24px;"><button class="btn-accent" onclick="submitReport()">📢 Submit Anonymous Report</button></div>
+    </div>
+    <!-- COMPLAINT PANE -->
+    <div class="tab-pane" id="pane-complaint">
+      <div style="background:linear-gradient(135deg,rgba(74,158,255,.07),rgba(74,158,255,.03));border:1px solid rgba(74,158,255,.22);border-radius:20px;padding:20px;margin:0 24px 20px;">
+        <div style="background:rgba(74,158,255,.2);border:1px solid rgba(74,158,255,.4);border-radius:8px;padding:4px 10px;display:inline-block;font-size:11px;color:var(--blue);font-weight:700;letter-spacing:1px;margin-bottom:8px;">AI POWERED</div>
+        <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:6px;">Auto Complaint Generator</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.5;">AI generates a formal complaint ready to send to authorities.</div>
+      </div>
+      <div style="padding:0 24px;">
+        <div class="fgroup"><label class="flabel">Incident Type</label><select class="fselect" id="comp-type"><option value="harassment">Harassment</option><option value="stalking">Stalking</option><option value="unsafe_driver">Unsafe Driver</option><option value="molestation">Molestation</option><option value="other">Other</option></select></div>
+        <div class="fgroup"><label class="flabel">Location</label><input class="finput" id="comp-loc" placeholder="e.g. Anna Nagar Metro"></div>
+        <div class="fgroup"><label class="flabel">Time</label><input class="finput" type="time" id="comp-time" style="color-scheme:dark;"></div>
+      </div>
+      <div style="padding:0 24px;margin-bottom:16px;"><button class="btn-blue" id="gen-btn" onclick="generateComplaint()"><span id="gen-lbl">✨ Generate Complaint</span></button></div>
+      <div id="gen-result" style="display:none;margin:0 24px 20px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;">
+        <div style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Generated Complaint</div>
+        <div id="gr-subject" style="font-size:14px;font-weight:700;color:var(--blue);margin-bottom:12px;"></div>
+        <div id="gr-body" style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:12px;"></div>
+        <div id="gr-auth" style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.25);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--teal);font-weight:600;"></div>
+        <button onclick="copyComplaint()" style="display:block;width:100%;padding:12px;border-radius:12px;margin-top:12px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">📋 Copy Complaint</button>
+      </div>
+    </div>
+  </div>
+  <div class="bnav">
+    <div class="bni" onclick="goTo('screen-home')"><div class="bni-icon">🏠</div><div class="bni-label">Home</div></div>
+    <div class="bni" onclick="goTo('screen-map')"><div class="bni-icon">🗺️</div><div class="bni-label">Map</div></div>
+    <div class="bni" onclick="goTo('screen-trusted')"><div class="bni-icon">🛡️</div><div class="bni-label">Travellers</div></div>
+    <div class="bni on"><div class="bni-icon">📢</div><div class="bni-label">Report</div><div class="bni-dot"></div></div>
+    <div class="bni" onclick="goTo('screen-profile')"><div class="bni-icon">👤</div><div class="bni-label">Profile</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     ⭐ UNIQUE: JOURNEY MODE
+═══════════════════════════ -->
+<div class="screen" id="screen-journey">
+  <div class="sbar"><span class="sbar-t">9:41</span><span style="font-size:12px;color:var(--text2);">🔒</span></div>
+  <div class="phead fi">
+    <div class="back" onclick="goBack()">←</div>
+    <div><div class="ptitle" style="font-size:20px;">Journey <span>Mode</span></div><div class="psub">Share live trip with family</div></div>
+  </div>
+  <div class="scroll" style="padding-bottom:90px;">
+    <!-- EXPLAINER -->
+    <div style="margin:0 24px 20px;background:linear-gradient(135deg,rgba(74,158,255,.1),rgba(74,158,255,.04));border:1px solid rgba(74,158,255,.25);border-radius:20px;padding:20px;" class="fi">
+      <div style="font-size:11px;color:var(--blue);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">🚗 WHAT IS JOURNEY MODE?</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.8;">
+        Before you travel, set your <strong style="color:var(--text);">destination</strong> and <strong style="color:var(--text);">expected arrival time</strong>.<br>
+        TrustTrail shares your <strong style="color:var(--blue);">live location</strong> with family the whole trip.<br>
+        If you <strong style="color:var(--accent);">don't arrive on time</strong>, your family gets an <strong style="color:var(--accent);">auto-alert</strong>. 🔔
+      </div>
+    </div>
+    <!-- JOURNEY FORM -->
+    <div style="padding:0 24px;" class="fi d1">
+      <div class="fgroup"><label class="flabel">📍 Where are you now?</label><input class="finput" id="j-from" placeholder="e.g. Anna Nagar Metro" value="Anna Nagar, Chennai"></div>
+      <div class="fgroup"><label class="flabel">🏁 Destination</label><input class="finput" id="j-to" placeholder="e.g. T. Nagar Bus Stand"></div>
+      <div class="fgroup"><label class="flabel">🚗 Mode of travel</label>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <div class="chip on" id="jm-auto" onclick="selectJourneyMode('Auto')">🚖 Auto</div>
+          <div class="chip" id="jm-cab" onclick="selectJourneyMode('Cab')">🚕 Cab</div>
+          <div class="chip" id="jm-bus" onclick="selectJourneyMode('Bus')">🚌 Bus</div>
+          <div class="chip" id="jm-walk" onclick="selectJourneyMode('Walk')">🚶 Walk</div>
+        </div>
+      </div>
+      <div class="fgroup"><label class="flabel">⏰ Expected arrival time</label><input class="finput" type="time" id="j-time" style="color-scheme:dark;"></div>
+      <div class="fgroup"><label class="flabel">👩 Share with (contacts notified)</label>
+        <div id="j-contacts-preview" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;font-size:13px;color:var(--text2);">Loading contacts...</div>
+      </div>
+    </div>
+    <!-- START BUTTON -->
+    <div style="padding:0 24px;" class="fi d2">
+      <button class="btn-blue" style="font-size:17px;" onclick="startJourney()">🚗 Start Journey Mode</button>
+    </div>
+    <!-- ACTIVE JOURNEY (hidden by default) -->
+    <div id="journey-active" style="display:none;margin:20px 24px 0;">
+      <div style="background:linear-gradient(135deg,rgba(74,158,255,.12),rgba(74,158,255,.04));border:1px solid rgba(74,158,255,.3);border-radius:20px;padding:20px;">
+        <div style="font-size:11px;color:var(--blue);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">🟢 JOURNEY ACTIVE</div>
+        <div style="display:flex;gap:16px;margin-bottom:14px;">
+          <div style="flex:1;text-align:center;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">From</div><div style="font-size:13px;font-weight:600;color:var(--text);" id="j-disp-from">-</div></div>
+          <div style="font-size:20px;color:var(--blue);margin-top:14px;">→</div>
+          <div style="flex:1;text-align:center;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">To</div><div style="font-size:13px;font-weight:600;color:var(--text);" id="j-disp-to">-</div></div>
+        </div>
+        <div style="background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.2);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--teal);animation:pulseAnim 1.5s infinite;flex-shrink:0;"></div>
+          <div style="font-size:13px;color:var(--teal);font-weight:600;">Live location sharing · Family notified</div>
+        </div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:14px;">⏰ Expected arrival: <strong style="color:var(--text);" id="j-disp-time">-</strong> · <span style="color:var(--yellow);" id="j-countdown">Calculating...</span></div>
+        <button onclick="endJourney()" class="btn-teal">✅ I Arrived Safely</button>
+      </div>
+    </div>
+  </div>
+  <div class="bnav">
+    <div class="bni" onclick="goTo('screen-home')"><div class="bni-icon">🏠</div><div class="bni-label">Home</div></div>
+    <div class="bni" onclick="goTo('screen-map')"><div class="bni-icon">🗺️</div><div class="bni-label">Map</div></div>
+    <div class="bni" onclick="goTo('screen-trusted')"><div class="bni-icon">🛡️</div><div class="bni-label">Travellers</div></div>
+    <div class="bni" onclick="goTo('screen-report')"><div class="bni-icon">📢</div><div class="bni-label">Report</div></div>
+    <div class="bni" onclick="goTo('screen-profile')"><div class="bni-icon">👤</div><div class="bni-label">Profile</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     ⭐ UNIQUE: SAFE WORD
+═══════════════════════════ -->
+<div class="screen" id="screen-safeword">
+  <div class="sbar"><span class="sbar-t">9:41</span><span style="font-size:12px;color:var(--text2);">🔒</span></div>
+  <div class="phead fi">
+    <div class="back" onclick="goBack()">←</div>
+    <div><div class="ptitle" style="font-size:20px;">Safe <span>Word</span></div><div class="psub">Silent SOS — looks like a normal message</div></div>
+  </div>
+  <div class="scroll" style="padding-bottom:90px;">
+    <div style="margin:0 24px 20px;background:linear-gradient(135deg,rgba(180,127,255,.1),rgba(180,127,255,.04));border:1px solid rgba(180,127,255,.3);border-radius:20px;padding:20px;" class="fi">
+      <div style="font-size:11px;color:#b47fff;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">🔑 WHAT IS SAFE WORD?</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.8;">
+        Set a secret word. If you're in danger and someone is watching your phone,<br>
+        just <strong style="color:var(--text);">type the safe word in the chat box below</strong> — it looks completely normal.<br>
+        But TrustTrail will <strong style="color:#b47fff;">silently send your SOS + location</strong> to all family contacts. 🤫
+      </div>
+    </div>
+    <!-- CURRENT SAFE WORD -->
+    <div style="padding:0 24px;" class="fi d1">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:20px;margin-bottom:20px;">
+        <div style="font-size:12px;color:var(--text2);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;">Your Current Safe Word</div>
+        <div style="font-family:monospace;font-size:28px;font-weight:700;color:var(--text);background:var(--surface2);border-radius:10px;padding:12px 16px;text-align:center;letter-spacing:6px;margin-bottom:12px;" id="safe-word-display">MANGO</div>
+        <div style="font-size:12px;color:var(--text3);text-align:center;">Choose something casual that won't raise suspicion</div>
+      </div>
+      <div class="fgroup"><label class="flabel">Change Safe Word</label>
+        <div style="display:flex;gap:10px;">
+          <input class="finput" id="new-safeword" placeholder="e.g. MANGO, OKAYBYE, HOMECOMING" style="flex:1;">
+          <button onclick="changeSafeWord()" style="padding:13px 16px;border-radius:12px;background:linear-gradient(135deg,#b47fff,#8a4ff0);border:none;color:#fff;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;">Save</button>
+        </div>
+      </div>
+    </div>
+    <!-- FAKE CHAT TESTER -->
+    <div style="padding:0 24px;" class="fi d2">
+      <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:12px;">🧪 Test It Here</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:12px;">
+        <div style="padding:12px 16px;background:linear-gradient(135deg,rgba(180,127,255,.1),transparent);border-bottom:1px solid var(--border);font-size:12px;color:#b47fff;font-weight:600;">💬 Fake Chat — type your safe word here</div>
+        <div id="chat-messages" style="padding:14px 16px;min-height:80px;max-height:140px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:13px;color:var(--text2);text-align:center;font-style:italic;">Type anything below. If you type your safe word, it will trigger SOS silently.</div>
+        </div>
+        <div style="display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border);">
+          <input class="finput" id="chat-input" placeholder="Type a message..." style="flex:1;" onkeydown="if(event.key==='Enter')sendChatMsg()">
+          <button onclick="sendChatMsg()" style="padding:12px 16px;border-radius:10px;background:linear-gradient(135deg,#b47fff,#8a4ff0);border:none;color:#fff;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">Send</button>
+        </div>
+      </div>
+    </div>
+    <!-- SAFE WORD SUGGESTIONS -->
+    <div style="padding:0 24px;" class="fi d3">
+      <div style="font-size:12px;color:var(--text2);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px;">Suggested Safe Words</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div class="chip" onclick="setSafeWordSuggestion('MANGO')" style="cursor:pointer;">🥭 MANGO</div>
+        <div class="chip" onclick="setSafeWordSuggestion('PINEAPPLE')" style="cursor:pointer;">🍍 PINEAPPLE</div>
+        <div class="chip" onclick="setSafeWordSuggestion('HOMECOMING')" style="cursor:pointer;">🏠 HOMECOMING</div>
+        <div class="chip" onclick="setSafeWordSuggestion('SUNFLOWER')" style="cursor:pointer;">🌻 SUNFLOWER</div>
+        <div class="chip" onclick="setSafeWordSuggestion('OKAYBYE')" style="cursor:pointer;">👋 OKAYBYE</div>
+      </div>
+    </div>
+  </div>
+  <div class="bnav">
+    <div class="bni" onclick="goTo('screen-home')"><div class="bni-icon">🏠</div><div class="bni-label">Home</div></div>
+    <div class="bni" onclick="goTo('screen-map')"><div class="bni-icon">🗺️</div><div class="bni-label">Map</div></div>
+    <div class="bni" onclick="goTo('screen-trusted')"><div class="bni-icon">🛡️</div><div class="bni-label">Travellers</div></div>
+    <div class="bni" onclick="goTo('screen-report')"><div class="bni-icon">📢</div><div class="bni-label">Report</div></div>
+    <div class="bni" onclick="goTo('screen-profile')"><div class="bni-icon">👤</div><div class="bni-label">Profile</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     PROFILE
+═══════════════════════════ -->
+<div class="screen" id="screen-profile">
+  <div class="sbar"><span class="sbar-t">9:41</span><span style="font-size:12px;color:var(--text2);">🔒</span></div>
+  <div class="phead fi">
+    <div class="back" onclick="goBack()">←</div>
+    <div><div class="ptitle" style="font-size:20px;">My <span>Profile</span></div><div class="psub">Your info and emergency contacts</div></div>
+  </div>
+  <div class="scroll" style="padding-bottom:90px;">
+    <!-- USER CARD -->
+    <div style="margin:0 24px 20px;" class="fi">
+      <div style="background:linear-gradient(135deg,rgba(255,59,107,.12),rgba(255,59,107,.04));border:1px solid rgba(255,59,107,.25);border-radius:20px;padding:20px;display:flex;align-items:center;gap:16px;">
+        <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#ff6b8a);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:22px;box-shadow:0 0 0 3px rgba(255,59,107,.25);" id="prof-avatar">P</div>
+        <div style="flex:1;">
+          <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;" id="prof-name-display">Priya Sharma</div>
+          <div style="font-size:13px;color:var(--text2);margin-top:3px;" id="prof-phone-display">+91 98765 43210</div>
+          <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(0,212,170,.12);border:1px solid rgba(0,212,170,.3);border-radius:6px;padding:3px 9px;font-size:11px;color:var(--teal);font-weight:600;margin-top:6px;">✓ Verified member</div>
+        </div>
+        <div onclick="toggleEditProfile()" style="width:36px;height:36px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;">✏️</div>
+      </div>
+    </div>
+    <!-- EDIT FORM -->
+    <div id="edit-form" style="display:none;margin:0 24px 20px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:20px;">
+      <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:14px;">Edit Profile</div>
+      <div class="fgroup"><label class="flabel">Name</label><input class="finput" id="edit-name" placeholder="Your full name"></div>
+      <div class="fgroup"><label class="flabel">Phone</label><input class="finput" id="edit-phone" placeholder="+91 98765 43210" type="tel"></div>
+      <button class="btn-accent" onclick="saveProfile()">Save Profile</button>
+    </div>
+    <!-- FAMILY CONTACTS -->
+    <div style="padding:0 24px;margin-bottom:20px;" class="fi d1">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;">🚨 Emergency Contacts</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:3px;">Notified instantly when you tap SOS</div>
+        </div>
+        <div onclick="showAddContact()" style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#cc1a47);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:#fff;font-weight:700;box-shadow:0 4px 12px rgba(255,59,107,.3);">+</div>
+      </div>
+      <div id="contacts-list"></div>
+      <!-- ADD FORM -->
+      <div id="add-contact-form" style="display:none;background:var(--surface);border:1px solid rgba(0,212,170,.3);border-radius:16px;padding:18px;margin-top:12px;">
+        <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px;color:var(--teal);">+ New Emergency Contact</div>
+        <div class="fgroup"><label class="flabel">Their Name</label><input class="finput" id="nc-name" placeholder="e.g. Amma, Akka, Friend"></div>
+        <div class="fgroup"><label class="flabel">Phone Number</label><input class="finput" id="nc-phone" placeholder="+91 98765 XXXXX" type="tel"></div>
+        <div class="fgroup"><label class="flabel">Relationship</label><select class="fselect" id="nc-rel"><option>Mother</option><option>Father</option><option>Sister</option><option>Brother</option><option>Partner</option><option>Friend</option><option>Other</option></select></div>
+        <div style="display:flex;gap:10px;margin-top:4px;">
+          <button onclick="hideAddContact()" style="flex:1;padding:12px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;">Cancel</button>
+          <button onclick="saveContact()" style="flex:2;padding:12px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#cc1a47);border:none;color:#fff;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">Save Contact</button>
+        </div>
+      </div>
+      <!-- SOS FLOW EXPLAINER -->
+      <div style="margin-top:18px;background:linear-gradient(135deg,rgba(255,59,107,.08),rgba(255,59,107,.03));border:1px solid rgba(255,59,107,.2);border-radius:16px;padding:16px 18px;">
+        <div style="font-size:11px;color:var(--accent);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">🚨 What happens when you tap SOS</div>
+        <div style="font-size:13px;color:var(--text2);line-height:2.0;">
+          ① Your GPS location is captured instantly<br>
+          ② All contacts above get a live tracking link<br>
+          ③ Your location updates every 5 seconds<br>
+          ④ Evidence auto-saved to your account<br>
+          ⑤ Tap "I'm Safe" to stop all alerts
+        </div>
+        <div style="margin-top:12px;padding:10px 14px;background:rgba(255,184,0,.08);border:1px solid rgba(255,184,0,.2);border-radius:10px;font-size:12px;color:var(--yellow);">
+          🚔 TrustTrail alerts <strong>your family</strong>. For police, call <strong>100</strong> or Women Helpline <strong>1091</strong>
+        </div>
+      </div>
+    </div>
+    <!-- SETTINGS -->
+    <div style="padding:0 24px;margin-bottom:20px;" class="fi d2">
+      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:14px;">⚙️ Settings</div>
+      <div class="setting-row"><div style="font-size:22px;width:28px;text-align:center;flex-shrink:0;">📍</div><div style="flex:1;"><div style="font-size:14px;font-weight:600;color:var(--text);">Live Location Sharing</div><div style="font-size:11px;color:var(--text2);margin-top:2px;">Active during SOS &amp; Journey Mode</div></div><div class="tog on"></div></div>
+      <div class="setting-row" onclick="toggleShake()"><div style="font-size:22px;width:28px;text-align:center;flex-shrink:0;">📳</div><div style="flex:1;"><div style="font-size:14px;font-weight:600;color:var(--text);">Shake to SOS</div><div style="font-size:11px;color:var(--text2);margin-top:2px;">Shake phone 3x to trigger</div></div><div class="tog" id="shake-tog"></div></div>
+      <div class="setting-row"><div style="font-size:22px;width:28px;text-align:center;flex-shrink:0;">🔔</div><div style="flex:1;"><div style="font-size:14px;font-weight:600;color:var(--text);">Area Safety Alerts</div><div style="font-size:11px;color:var(--text2);margin-top:2px;">Notify when entering risk zones</div></div><div class="tog on"></div></div>
+    </div>
+    <div style="padding:0 24px 10px;" class="fi d3">
+      <button onclick="goTo('screen-login')" style="width:100%;padding:14px;border-radius:14px;background:var(--surface);border:1px solid rgba(255,59,107,.3);color:var(--accent);font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">Sign Out</button>
+    </div>
+  </div>
+  <div class="bnav">
+    <div class="bni" onclick="goTo('screen-home')"><div class="bni-icon">🏠</div><div class="bni-label">Home</div></div>
+    <div class="bni" onclick="goTo('screen-map')"><div class="bni-icon">🗺️</div><div class="bni-label">Map</div></div>
+    <div class="bni" onclick="goTo('screen-trusted')"><div class="bni-icon">🛡️</div><div class="bni-label">Travellers</div></div>
+    <div class="bni" onclick="goTo('screen-report')"><div class="bni-icon">📢</div><div class="bni-label">Report</div></div>
+    <div class="bni on"><div class="bni-icon">👤</div><div class="bni-label">Profile</div><div class="bni-dot"></div></div>
+  </div>
+</div>
+
+</div><!-- end app -->
+<script>
+/* ═══ DATA ═══ */
+let contacts = [
+  { name:'Amma',  phone:'+91 98765 00001', rel:'Mother', color:'linear-gradient(135deg,#4A9EFF,#2a7ee0)' },
+  { name:'Appa',  phone:'+91 98765 00002', rel:'Father', color:'linear-gradient(135deg,#00D4AA,#00a88a)' }
+];
+let safeWord = 'MANGO';
+let isRegister = false;
+let journeyActive = false;
+let journeyMode = 'Auto';
+let sosTimer, sosCount;
+let historyStack = ['screen-login'];
+
+/* ═══ NAV ═══ */
+function goTo(id) {
+  const cur = document.querySelector('.screen.active');
+  const next = document.getElementById(id);
+  if (!next || cur === next) return;
+  cur.classList.remove('active');
+  next.classList.remove('anim-in','anim-back');
+  next.classList.add('active','anim-in');
+  setTimeout(() => next.classList.remove('anim-in'), 300);
+  historyStack.push(id);
+  if (id === 'screen-profile') renderContacts();
+  if (id === 'screen-journey') renderJourneyContacts();
+}
+function goBack() {
+  if (historyStack.length > 1) {
+    historyStack.pop();
+    const prev = historyStack[historyStack.length - 1];
+    const cur = document.querySelector('.screen.active');
+    const target = document.getElementById(prev);
+    cur.classList.remove('active');
+    target.classList.add('active','anim-back');
+    setTimeout(() => target.classList.remove('anim-back'), 300);
+  }
+}
+
+/* ═══ TOAST ═══ */
+function toast(msg, red) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (red ? ' red' : '') + ' show';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+/* ═══ LOGIN ═══ */
+function doLogin() {
+  const phone = document.getElementById('login-phone').value.trim();
+  if (!phone) { toast('Please enter your phone number', true); return; }
+  toast('✅ Welcome to TrustTrail!');
+  setTimeout(() => goTo('screen-home'), 500);
+}
+function toggleLoginMode() {
+  isRegister = !isRegister;
+  document.getElementById('login-name').style.display = isRegister ? 'block' : 'none';
+  document.getElementById('login-title').textContent = isRegister ? 'Create account 🌸' : 'Welcome back 👋';
+  document.getElementById('login-toggle').textContent = isRegister ? 'Sign in instead' : 'Create account';
+}
+
+/* ═══ SOS ═══ */
+function openSOS() {
+  document.getElementById('sos-modal').classList.add('open');
+  sosCount = 5;
+  document.getElementById('cnum').textContent = 5;
+  document.getElementById('cfg').style.strokeDashoffset = '0';
+  sosTimer = setInterval(() => {
+    sosCount--;
+    document.getElementById('cnum').textContent = sosCount;
+    document.getElementById('cfg').style.strokeDashoffset = ((5 - sosCount) / 5) * 283;
+    if (sosCount <= 0) { clearInterval(sosTimer); sendSOS(); }
+  }, 1000);
+}
+function cancelSOS() {
+  clearInterval(sosTimer);
+  document.getElementById('sos-modal').classList.remove('open');
+}
+function sendSOS() {
+  clearInterval(sosTimer);
+  document.getElementById('sos-modal').classList.remove('open');
+  const list = document.getElementById('sos-notified-list');
+  if (contacts.length === 0) {
+    list.innerHTML = '<div style="color:var(--text2);font-size:13px;text-align:center;padding:8px;">No contacts saved. Go to Profile to add family.</div>';
+  } else {
+    list.innerHTML = contacts.map((c, i) =>
+      '<div class="notif-row">' +
+        '<div class="nav" style="background:' + c.color + ';">' + c.name[0] + '</div>' +
+        '<div><div style="font-size:14px;font-weight:600;color:var(--text);">' + c.name + ' · ' + c.phone + '</div>' +
+        '<div style="font-size:11px;color:var(--teal);margin-top:2px;" id="ns' + i + '">⏳ Sending alert...</div></div>' +
+        '<div id="nc' + i + '" style="margin-left:auto;font-size:20px;">📤</div>' +
+      '</div>'
+    ).join('');
+    contacts.forEach((c, i) => {
+      setTimeout(() => {
+        const s = document.getElementById('ns' + i);
+        const ch = document.getElementById('nc' + i);
+        if (s) s.textContent = '✅ Alert sent · Live link shared';
+        if (ch) ch.textContent = '✅';
+      }, 700 + i * 600);
+    });
+  }
+  goTo('screen-sos-active');
+}
+function resolveSOS() {
+  goTo('screen-home');
+  toast('✅ SOS resolved. Glad you are safe! 💚');
+}
+
+/* ═══ MAP ═══ */
+function showArea(title, sub, riskClass) {
+  document.getElementById('at-title').textContent = title;
+  document.getElementById('at-sub').textContent = sub;
+  document.getElementById('area-tip').classList.add('show');
+  const rc = document.getElementById('risk-cur');
+  rc.className = 'risk-cur ' + riskClass;
+  const vals = { rg:'✅ SAFE Zone', ry:'🟡 MODERATE RISK', rr:'⚠️ HIGH RISK Area' };
+  document.getElementById('risk-val').textContent = vals[riskClass] || title;
+  setTimeout(() => document.getElementById('area-tip').classList.remove('show'), 4000);
+}
+
+/* ═══ TRUSTED ═══ */
+function recBtn(btn, name) {
+  const c = btn.querySelector('div:last-child');
+  c.textContent = parseInt(c.textContent) + 1;
+  btn.style.transform = 'scale(.8)';
+  setTimeout(() => btn.style.transform = 'scale(1)', 200);
+  toast('👩 You recommended ' + name + '!');
+}
+function filterChip(el, type) {
+  document.querySelectorAll('#screen-trusted .chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  document.querySelectorAll('#trusted-list .lcard').forEach(c => {
+    c.style.display = (type === 'all' || c.dataset.type === type) ? '' : 'none';
+  });
+}
+function filterTrusted(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('#trusted-list .lcard').forEach(c => {
+    c.style.display = (!q || c.textContent.toLowerCase().includes(q)) ? '' : 'none';
+  });
+}
+function openAddModal() { document.getElementById('add-modal').classList.add('open'); }
+function selType(el) {
+  document.querySelectorAll('.type-opt').forEach(o => o.classList.remove('on'));
+  el.classList.add('on');
+}
+function submitAdd() {
+  const n = document.getElementById('new-name').value.trim();
+  if (!n) { toast('Please enter a name', true); return; }
+  document.getElementById('add-modal').classList.remove('open');
+  toast('✅ ' + n + ' added to Trust Network!');
+}
+
+/* ═══ REPORT ═══ */
+function selInc(el) {
+  document.querySelectorAll('.inc-opt').forEach(o => o.classList.remove('on'));
+  el.classList.add('on');
+}
+function submitReport() {
+  const loc = document.getElementById('rep-loc').value.trim();
+  if (!loc) { toast('Please enter the location', true); return; }
+  document.getElementById('rep-loc').value = '';
+  document.getElementById('rep-desc').value = '';
+  toast('✅ Anonymous report submitted! Showing on community map.');
+}
+function switchTab(tab) {
+  document.getElementById('pane-report').classList.toggle('on', tab === 'report');
+  document.getElementById('pane-complaint').classList.toggle('on', tab === 'complaint');
+  document.getElementById('tbtn-report').className = 'tbtn' + (tab === 'report' ? ' onr' : '');
+  document.getElementById('tbtn-complaint').className = 'tbtn' + (tab === 'complaint' ? ' onb' : '');
+}
+function generateComplaint() {
+  const loc = document.getElementById('comp-loc').value || 'the reported location';
+  const raw = document.getElementById('comp-time').value;
+  const time = raw ? (function() { const p = raw.split(':'); const h = +p[0]; return (h > 12 ? h - 12 : h || 12) + ':' + p[1] + ' ' + (h >= 12 ? 'PM' : 'AM'); })() : '9:45 PM';
+  const type = document.getElementById('comp-type').value;
+  const labels = { harassment:'Harassment', stalking:'Stalking', unsafe_driver:'Unsafe Driver', molestation:'Molestation', other:'Incident' };
+  const auths  = { harassment:'🚔 Chennai City Police — Women Help Desk', stalking:'🚔 Anti-Stalking Cell, TN Police', unsafe_driver:'🚖 RTO + Chennai City Police', molestation:'🚔 Women Safety Wing, Chennai', other:'🚔 Nearest Police Station' };
+  document.getElementById('gen-lbl').textContent = 'Generating...';
+  setTimeout(() => {
+    document.getElementById('gen-lbl').textContent = '✨ Generate Complaint';
+    document.getElementById('gr-subject').textContent = 'Complaint Regarding ' + labels[type] + ' at ' + loc;
+    document.getElementById('gr-body').textContent = 'I wish to formally report an incident of ' + labels[type].toLowerCase() + ' that occurred at ' + loc + ' at approximately ' + time + '. The incident caused significant distress and I request immediate investigation to ensure the safety of women in this area. This report is submitted via TrustTrail community safety platform and I request it be registered under appropriate sections.';
+    document.getElementById('gr-auth').textContent = auths[type];
+    document.getElementById('gen-result').style.display = 'block';
+    toast('✅ Complaint generated! Tap copy to use it.');
+  }, 1400);
+}
+function copyComplaint() {
+  const text = document.getElementById('gr-subject').textContent + '\n\n' + document.getElementById('gr-body').textContent;
+  if (navigator.clipboard) { navigator.clipboard.writeText(text).then(() => toast('📋 Copied to clipboard!')); }
+  else { toast('📋 Please manually copy the text above'); }
+}
+
+/* ═══ CONTACTS ═══ */
+function renderContacts() {
+  const list = document.getElementById('contacts-list');
+  if (!list) return;
+  if (contacts.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px;background:var(--surface);border-radius:14px;">No contacts yet — tap + to add your family</div>';
+    return;
+  }
+  const colors = ['linear-gradient(135deg,#4A9EFF,#2a7ee0)', 'linear-gradient(135deg,#00D4AA,#00a88a)', 'linear-gradient(135deg,#b47fff,#8a4ff0)', 'linear-gradient(135deg,#FFB800,#cc9200)'];
+  list.innerHTML = contacts.map(function(c, i) {
+    return '<div class="contact-card">' +
+      '<div class="contact-left">' +
+        '<div class="cav" style="background:' + (c.color || colors[i % colors.length]) + ';">' + c.name[0].toUpperCase() + '</div>' +
+        '<div><div class="cname">' + c.name + '</div><div class="cphone">' + c.phone + '</div><div class="crel">' + c.rel + '</div></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;align-items:center;">' +
+        (i === 0 ? '<div class="cbadge">Primary</div>' : '') +
+        '<div onclick="deleteContact(' + i + ')" style="width:30px;height:30px;border-radius:8px;background:rgba(255,59,107,.12);border:1px solid rgba(255,59,107,.25);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;">🗑️</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+function deleteContact(i) {
+  contacts.splice(i, 1);
+  renderContacts();
+  toast('Contact removed');
+}
+function showAddContact() {
+  document.getElementById('add-contact-form').style.display = 'block';
+  document.getElementById('nc-name').focus();
+}
+function hideAddContact() {
+  document.getElementById('add-contact-form').style.display = 'none';
+  document.getElementById('nc-name').value = '';
+  document.getElementById('nc-phone').value = '';
+}
+function saveContact() {
+  const name  = document.getElementById('nc-name').value.trim();
+  const phone = document.getElementById('nc-phone').value.trim();
+  const rel   = document.getElementById('nc-rel').value;
+  if (!name)  { toast('Please enter their name', true); return; }
+  if (!phone) { toast('Please enter their phone number', true); return; }
+  contacts.push({ name, phone, rel });
+  renderContacts();
+  hideAddContact();
+  toast('✅ ' + name + ' added as emergency contact!');
+}
+function toggleEditProfile() {
+  const f = document.getElementById('edit-form');
+  const isHidden = f.style.display === 'none';
+  f.style.display = isHidden ? 'block' : 'none';
+  if (isHidden) {
+    document.getElementById('edit-name').value = document.getElementById('prof-name-display').textContent;
+    document.getElementById('edit-phone').value = document.getElementById('prof-phone-display').textContent;
+  }
+}
+function saveProfile() {
+  const name = document.getElementById('edit-name').value.trim();
+  const phone = document.getElementById('edit-phone').value.trim();
+  if (!name) { toast('Please enter your name', true); return; }
+  document.getElementById('prof-name-display').textContent = name;
+  document.getElementById('prof-phone-display').textContent = phone;
+  document.getElementById('prof-avatar').textContent = name[0].toUpperCase();
+  document.getElementById('edit-form').style.display = 'none';
+  toast('✅ Profile saved!');
+}
+function toggleShake() {
+  const tog = document.getElementById('shake-tog');
+  tog.classList.toggle('on');
+  toast(tog.classList.contains('on') ? '📳 Shake to SOS enabled!' : 'Shake to SOS disabled');
+}
+
+/* ═══ JOURNEY MODE ═══ */
+function selectJourneyMode(mode) {
+  journeyMode = mode;
+  ['Auto','Cab','Bus','Walk'].forEach(m => {
+    const el = document.getElementById('jm-' + m.toLowerCase());
+    if (el) el.classList.toggle('on', m === mode);
+  });
+}
+function renderJourneyContacts() {
+  const el = document.getElementById('j-contacts-preview');
+  if (!el) return;
+  if (contacts.length === 0) { el.textContent = 'No contacts saved — add in Profile first'; return; }
+  el.innerHTML = contacts.map(c => '<span style="display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--text);margin:2px 4px 2px 0;">' + c.name[0] + ' ' + c.name + '</span>').join('');
+}
+function startJourney() {
+  const dest = document.getElementById('j-to').value.trim();
+  const from = document.getElementById('j-from').value.trim() || 'Current Location';
+  const time = document.getElementById('j-time').value;
+  if (!dest) { toast('Please enter your destination', true); return; }
+  if (!time)  { toast('Please set expected arrival time', true); return; }
+  journeyActive = true;
+  document.getElementById('j-disp-from').textContent = from;
+  document.getElementById('j-disp-to').textContent   = dest;
+  const h = +time.split(':')[0], m = +time.split(':')[1];
+  document.getElementById('j-disp-time').textContent = (h > 12 ? h - 12 : h || 12) + ':' + (m < 10 ? '0' : '') + m + ' ' + (h >= 12 ? 'PM' : 'AM');
+  document.getElementById('journey-active').style.display = 'block';
+  document.getElementById('j-countdown').textContent = 'Family notified ✅';
+  toast('🚗 Journey Mode started! Family is watching your live location.');
+}
+function endJourney() {
+  journeyActive = false;
+  document.getElementById('journey-active').style.display = 'none';
+  document.getElementById('j-to').value = '';
+  goTo('screen-home');
+  toast('✅ Arrived safely! Journey ended. Great job! 💚');
+}
+
+/* ═══ SAFE WORD ═══ */
+function changeSafeWord() {
+  const w = document.getElementById('new-safeword').value.trim().toUpperCase();
+  if (!w) { toast('Please enter a safe word', true); return; }
+  safeWord = w;
+  document.getElementById('safe-word-display').textContent = w;
+  document.getElementById('new-safeword').value = '';
+  toast('🔑 Safe word set to: ' + w);
+}
+function setSafeWordSuggestion(word) {
+  safeWord = word;
+  document.getElementById('safe-word-display').textContent = word;
+  toast('🔑 Safe word set to: ' + word);
+}
+function sendChatMsg() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const msgs = document.getElementById('chat-messages');
+  const bubble = document.createElement('div');
+  bubble.style.cssText = 'align-self:flex-end;background:linear-gradient(135deg,var(--blue),#2a7ee0);color:#fff;padding:8px 14px;border-radius:14px 14px 2px 14px;font-size:13px;max-width:80%;';
+  bubble.textContent = msg;
+  msgs.appendChild(bubble);
+  msgs.scrollTop = msgs.scrollHeight;
+  input.value = '';
+  if (msg.toUpperCase().includes(safeWord.toUpperCase())) {
+    setTimeout(() => {
+      const alertDiv = document.createElement('div');
+      alertDiv.style.cssText = 'align-self:center;background:rgba(255,59,107,.15);border:1px solid rgba(255,59,107,.3);color:var(--accent);padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;text-align:center;';
+      alertDiv.textContent = '🚨 SAFE WORD DETECTED — Silent SOS sent to ' + contacts.length + ' contacts!';
+      msgs.appendChild(alertDiv);
+      msgs.scrollTop = msgs.scrollHeight;
+      toast('🔑 Safe word triggered! Silent SOS sent to all family!', true);
+    }, 300);
+  }
+}
+
+/* ═══ CLOSE MODALS ═══ */
+document.addEventListener('click', function(e) {
+  if (e.target.id === 'add-modal')  e.target.classList.remove('open');
+  if (e.target.id === 'sos-modal') cancelSOS();
+});
+
+/* ═══ INIT ═══ */
+document.addEventListener('DOMContentLoaded', function() {
+  renderContacts();
+  renderJourneyContacts();
+});
+</script>
+</body>
+</html>
