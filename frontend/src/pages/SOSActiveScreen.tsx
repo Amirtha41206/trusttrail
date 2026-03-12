@@ -13,7 +13,7 @@ export default function SOSActiveScreen() {
     contacts.forEach((c, i) => {
       setTimeout(() => {
         setStatuses((prev) => ({ ...prev, [c.id]: "sent" }));
-      }, 1500 + i * 800);
+      }, 200 + i * 300);
     });
   }, [contacts]);
 

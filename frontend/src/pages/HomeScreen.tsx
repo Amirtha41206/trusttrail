@@ -7,7 +7,7 @@ export default function HomeScreen() {
   const { user, travellers, alerts, setSosActive } = useApp();
   const navigate = useNavigate();
   const [showSosModal, setShowSosModal] = useState(false);
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(2);
   const [counting, setCounting] = useState(false);
 
   useEffect(() => {
@@ -25,14 +25,14 @@ export default function HomeScreen() {
 
   const startSOS = () => {
     setShowSosModal(true);
-    setCountdown(5);
+    setCountdown(2);
     setCounting(true);
   };
 
   const cancelSOS = () => {
     setShowSosModal(false);
     setCounting(false);
-    setCountdown(5);
+    setCountdown(2);
   };
 
   const quickActions = [
@@ -70,7 +70,7 @@ export default function HomeScreen() {
           <div className="absolute inset-0 w-3 h-3 rounded-full bg-teal animate-pulse-dot" />
         </div>
         <div>
-          <p className="text-sm font-body font-semibold text-teal">You're in a safe area</p>
+          <p className="text-sm font-body font-semibold text-teal">You are in a safe area</p>
           <p className="text-xs text-muted-foreground font-body">Location: T. Nagar, Chennai</p>
         </div>
       </div>
