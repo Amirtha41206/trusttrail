@@ -2,39 +2,39 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "@/contexts/AppContext";
 import BottomNav from "@/components/BottomNav";
+import { useTravelModeGuard, GuardStatus } from "@/hooks/useTravelModeGuard";
 
 export default function HomeScreen() {
   const { user, travellers, alerts, setSosActive } = useApp();
   const navigate = useNavigate();
+
   const [showSosModal, setShowSosModal] = useState(false);
-  const [countdown, setCountdown] = useState(2);
-  const [counting, setCounting] = useState(false);
-  const [travelMode, setTravelMode] = useState(false);
+  const [countdown, setCountdown]       = useState(2);
+  const [counting, setCounting]         = useState(false);
+  const [travelMode, setTravelMode]     = useState(false);
+  const [guardStatus, setGuardStatus]   = useState<GuardStatus>("off");
 
-  const tapCount = useRef(0);
-  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const spaceCount = useRef(0);
-  const spaceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (!counting) return;
-    if (countdown <= 0) {
-      setCounting(false);
-      setShowSosModal(false);
-      setSosActive(true);
-      navigate("/sos-active");
-      return;
-    }
-    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [counting, countdown, navigate, setSosActive]);
-
-  const triggerInstantSOS = useCallback(() => {
+  // ── Central SOS trigger (used by manual + voice guard) ───────────────────
+  const triggerSOS = useCallback((reason: string = "") => {
     setShowSosModal(false);
     setCounting(false);
     setSosActive(true);
-    navigate("/sos-active");
+    navigate("/sos-active", { state: { reason } });
   }, [navigate, setSosActive]);
+
+  // ── Voice + volume guard (auto-starts when travelMode = true) ────────────
+  useTravelModeGuard({
+    enabled:        travelMode,
+    onPanicWord:    (word) => triggerSOS(`Panic word detected: "${word}"`),
+    onVoiceRaised:  ()     => triggerSOS("Raised voice / scream detected"),
+    onStatusChange: setGuardStatus,
+  });
+
+  // ── Manual tap / S-key shortcuts ─────────────────────────────────────────
+  const tapCount   = useRef(0);
+  const tapTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const spaceCount = useRef(0);
+  const spaceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!travelMode) return;
@@ -43,10 +43,7 @@ export default function HomeScreen() {
       tapCount.current++;
       if (tapTimer.current) clearTimeout(tapTimer.current);
       tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 2000);
-      if (tapCount.current >= 5) {
-        tapCount.current = 0;
-        triggerInstantSOS();
-      }
+      if (tapCount.current >= 5) { tapCount.current = 0; triggerSOS("5 rapid taps detected"); }
     };
 
     const handleKey = (e: KeyboardEvent) => {
@@ -54,10 +51,7 @@ export default function HomeScreen() {
         spaceCount.current++;
         if (spaceTimer.current) clearTimeout(spaceTimer.current);
         spaceTimer.current = setTimeout(() => { spaceCount.current = 0; }, 1500);
-        if (spaceCount.current >= 3) {
-          spaceCount.current = 0;
-          triggerInstantSOS();
-        }
+        if (spaceCount.current >= 3) { spaceCount.current = 0; triggerSOS("S-key panic trigger"); }
       }
     };
 
@@ -67,44 +61,78 @@ export default function HomeScreen() {
       document.removeEventListener("click", handleTap);
       document.removeEventListener("keydown", handleKey);
     };
-  }, [travelMode, triggerInstantSOS]);
+  }, [travelMode, triggerSOS]);
 
-  const startSOS = () => {
-    setShowSosModal(true);
-    setCountdown(2);
-    setCounting(true);
+  // ── Countdown SOS modal ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (!counting) return;
+    if (countdown <= 0) {
+      setCounting(false);
+      setShowSosModal(false);
+      triggerSOS("Manual SOS button");
+      return;
+    }
+    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [counting, countdown, triggerSOS]);
+
+  const startSOS = () => { setShowSosModal(true); setCountdown(2); setCounting(true); };
+  const cancelSOS = () => { setShowSosModal(false); setCounting(false); setCountdown(2); };
+
+  // ── Guard status display config ───────────────────────────────────────────
+  const guardUI: Record<string, { dot: string; text: string; pulse: boolean; bg: string; border: string } | null> = {
+    off:          null,
+    listening:    { dot: "#00d9a3", text: "🎙️ Listening — say 'help', 'danger', 'bachao'…",  pulse: true,  bg: "rgba(0,217,163,0.07)",  border: "rgba(0,217,163,0.25)"  },
+    panic_word:   { dot: "#ff2d55", text: "⚠️ Panic word heard — SOS triggered!",             pulse: false, bg: "rgba(255,45,85,0.10)",  border: "rgba(255,45,85,0.35)"  },
+    raised_voice: { dot: "#ff2d55", text: "⚠️ Raised voice detected — SOS triggered!",        pulse: false, bg: "rgba(255,45,85,0.10)",  border: "rgba(255,45,85,0.35)"  },
+    mic_denied:   { dot: "#f5c518", text: "⚠️ Mic denied — voice guard inactive",             pulse: false, bg: "rgba(245,197,24,0.08)", border: "rgba(245,197,24,0.30)" },
+    speech_error: { dot: "#f5c518", text: "⚠️ Speech recognition unavailable on this device", pulse: false, bg: "rgba(245,197,24,0.08)", border: "rgba(245,197,24,0.30)" },
   };
+  const guardInfo = guardUI[guardStatus] ?? null;
 
-  const cancelSOS = () => {
-    setShowSosModal(false);
-    setCounting(false);
-    setCountdown(2);
-  };
-
+  // ── Quick actions ─────────────────────────────────────────────────────────
   const quickActions = [
-    { icon: "🗺️", label: "Safety Map", path: "/map" },
+    { icon: "🗺️", label: "Safety Map",        path: "/map"       },
     { icon: "👥", label: "Trusted Travellers", path: "/travellers" },
-    { icon: "🧭", label: "Journey Mode", path: "/journey" },
-    { icon: "📢", label: "Report", path: "/report" },
-    { icon: "🔑", label: "Safe Word", path: "/safe-word" },
-    { icon: "🤖", label: "AI Complaint", path: "/report?tab=complaint" },
+    { icon: "🧭", label: "Journey Mode",       path: "/journey"   },
+    { icon: "📢", label: "Report",             path: "/report"    },
+    { icon: "🔑", label: "Safe Word",          path: "/safe-word" },
+    { icon: "🛡️", label: "AI Threat",          path: "/ai-threat" },
   ];
 
   const levelColors: Record<string, string> = {
-    danger: "bg-primary/20 text-primary border-primary/30",
+    danger:  "bg-primary/20 text-primary border-primary/30",
     warning: "bg-yellow/20 text-yellow border-yellow/30",
-    safe: "bg-teal/20 text-teal border-teal/30",
+    safe:    "bg-teal/20 text-teal border-teal/30",
   };
 
   return (
     <div className="app-container pb-24">
+
+      {/* ── Animations ───────────────────────────────────────────────────── */}
+      <style>{`
+        @keyframes guard-ping {
+          0%   { transform: scale(1);   opacity: 0.9; }
+          100% { transform: scale(2.6); opacity: 0;   }
+        }
+        @keyframes mic-breathe {
+          0%,100% { opacity: 1;   transform: scale(1);    }
+          50%     { opacity: 0.45; transform: scale(0.85); }
+        }
+        .guard-ping { animation: guard-ping 1.5s ease-out infinite; }
+        .mic-breathe { animation: mic-breathe 1.4s ease-in-out infinite; }
+      `}</style>
+
       {/* Header */}
       <div className="flex items-center justify-between p-4 pt-6">
         <div>
           <p className="text-sm text-muted-foreground font-body">Good evening,</p>
           <h1 className="text-xl font-heading font-extrabold text-foreground">{user.name} 👋</h1>
         </div>
-        <button onClick={() => navigate("/profile")} className="w-10 h-10 bg-card rounded-full flex items-center justify-center text-xl border border-border">
+        <button
+          onClick={() => navigate("/profile")}
+          className="w-10 h-10 bg-card rounded-full flex items-center justify-center text-xl border border-border"
+        >
           {user.avatar}
         </button>
       </div>
@@ -121,10 +149,10 @@ export default function HomeScreen() {
         </div>
       </div>
 
-      {/* Travel Mode Toggle */}
+      {/* ── Travel Mode Toggle ────────────────────────────────────────────── */}
       <div
         onClick={() => setTravelMode((v) => !v)}
-        className={`mx-4 mb-4 p-3.5 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${
+        className={`mx-4 mb-2 p-3.5 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${
           travelMode ? "bg-primary/10 border-primary/40" : "bg-card border-border"
         }`}
       >
@@ -137,7 +165,9 @@ export default function HomeScreen() {
             </span>
           </p>
           <p className="text-xs text-muted-foreground font-body">
-            {travelMode ? "Tap 5x or press S 3x for instant SOS" : "Turn on while travelling alone"}
+            {travelMode
+              ? "AI voice guard active — monitoring for panic words"
+              : "Turn on while travelling alone"}
           </p>
         </div>
         <div className={`w-10 h-5 rounded-full transition-all relative ${travelMode ? "bg-primary" : "bg-muted"}`}>
@@ -145,14 +175,45 @@ export default function HomeScreen() {
         </div>
       </div>
 
-      {/* Panic hints - only when travel mode ON */}
+      {/* ── Guard status pill ─────────────────────────────────────────────── */}
+      {travelMode && guardInfo && (
+        <div
+          className="mx-4 mb-3 p-3 rounded-xl flex items-center gap-3"
+          style={{ background: guardInfo.bg, border: `1px solid ${guardInfo.border}` }}
+        >
+          {/* animated dot */}
+          <div className="relative flex-shrink-0" style={{ width: 10, height: 10 }}>
+            <div style={{ width: 10, height: 10, borderRadius: "50%", background: guardInfo.dot }} />
+            {guardInfo.pulse && (
+              <div
+                className="guard-ping"
+                style={{ position: "absolute", inset: 0, borderRadius: "50%", background: guardInfo.dot }}
+              />
+            )}
+          </div>
+
+          <span className="text-xs font-body font-semibold flex-1" style={{ color: guardInfo.dot }}>
+            {guardInfo.text}
+          </span>
+
+          {guardStatus === "listening" && (
+            <span className="text-base mic-breathe">🎙️</span>
+          )}
+        </div>
+      )}
+
+      {/* ── Panic triggers hint ───────────────────────────────────────────── */}
       {travelMode && (
         <div className="mx-4 mb-4 p-3 rounded-xl bg-primary/5 border border-primary/20">
-          <p className="text-[11px] text-primary font-heading font-bold mb-1">PANIC TRIGGERS ACTIVE</p>
-          <p className="text-[11px] text-muted-foreground font-body leading-relaxed">
-            📲 Tap screen 5 times fast = instant SOS{"\n"}
-            ⌨️ Press S key 3 times fast = silent SOS
-          </p>
+          <p className="text-[11px] text-primary font-heading font-bold mb-1.5">PANIC TRIGGERS ACTIVE</p>
+          {[
+            `🎙️ Say "help", "danger", "bachao" → instant SOS`,
+            `📢 Scream or raise voice for 2 s → auto SOS`,
+            `📲 Tap screen 5× fast → instant SOS`,
+            `⌨️ Press S key 3× fast → silent SOS`,
+          ].map((tip, i) => (
+            <p key={i} className="text-[11px] text-muted-foreground font-body leading-relaxed">{tip}</p>
+          ))}
         </div>
       )}
 
@@ -160,7 +221,7 @@ export default function HomeScreen() {
       <div className="flex justify-center mb-6">
         <button
           onClick={startSOS}
-          className="relative w-24 h-24 rounded-full bg-primary flex items-center justify-center animate-sos-pulse transition-transform active:scale-95"
+          className="relative w-24 h-24 rounded-full bg-primary flex items-center justify-center transition-transform active:scale-95"
         >
           <div className="absolute inset-0 rounded-full bg-primary/30" style={{ animation: "sos-ring 2s ease-out infinite" }} />
           <div className="absolute inset-0 rounded-full bg-primary/20" style={{ animation: "sos-ring 2s ease-out infinite 0.5s" }} />
@@ -215,7 +276,7 @@ export default function HomeScreen() {
         </div>
       </div>
 
-      {/* SOS Modal */}
+      {/* SOS countdown modal */}
       {showSosModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-md">
           <div className="text-center animate-fade-in">
@@ -224,8 +285,7 @@ export default function HomeScreen() {
                 <circle cx="50" cy="50" r="45" fill="none" stroke="hsl(var(--border))" strokeWidth="4" />
                 <circle
                   cx="50" cy="50" r="45" fill="none"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth="4"
+                  stroke="hsl(var(--primary))" strokeWidth="4"
                   strokeDasharray="283"
                   className="animate-countdown-ring"
                   strokeLinecap="round"
@@ -237,7 +297,10 @@ export default function HomeScreen() {
             </div>
             <h2 className="text-xl font-heading font-bold text-foreground mb-2">Sending SOS Alert</h2>
             <p className="text-sm text-muted-foreground font-body mb-6">Alerting your emergency contacts...</p>
-            <button onClick={cancelSOS} className="px-8 py-3 bg-card border border-border rounded-xl text-foreground font-body font-semibold hover:bg-secondary transition-colors">
+            <button
+              onClick={cancelSOS}
+              className="px-8 py-3 bg-card border border-border rounded-xl text-foreground font-body font-semibold hover:bg-secondary transition-colors"
+            >
               Cancel
             </button>
           </div>

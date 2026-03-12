@@ -1,20 +1,27 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useApp } from "@/contexts/AppContext";
 
 export default function SOSActiveScreen() {
   const { contacts, setSosActive } = useApp();
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
+  const location  = useLocation();
+
+  // Reason passed from triggerSOS() in HomeScreen
+  const triggerReason: string = (location.state as any)?.reason ?? "Manual SOS";
+
   const [statuses, setStatuses] = useState<Record<string, "sending" | "sent">>(
     Object.fromEntries(contacts.map((c) => [c.id, "sending" as const]))
   );
-  const [camStatus, setCamStatus] = useState<"requesting" | "recording" | "denied">("requesting");
-  const [micStatus, setMicStatus] = useState<"requesting" | "recording" | "denied">("requesting");
+  const [camStatus, setCamStatus]     = useState<"requesting" | "recording" | "denied">("requesting");
+  const [micStatus, setMicStatus]     = useState<"requesting" | "recording" | "denied">("requesting");
   const [recordingTime, setRecordingTime] = useState(0);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const recorderRef    = useRef<MediaRecorder | null>(null);
+  const timerRef       = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Stagger contact alert statuses
   useEffect(() => {
     contacts.forEach((c, i) => {
       setTimeout(() => {
@@ -23,13 +30,11 @@ export default function SOSActiveScreen() {
     });
   }, [contacts]);
 
+  // Start cam + mic recording
   useEffect(() => {
     const startRecording = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true,
-        });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         mediaStreamRef.current = stream;
         setCamStatus("recording");
         setMicStatus("recording");
@@ -37,25 +42,21 @@ export default function SOSActiveScreen() {
         const recorder = new MediaRecorder(stream);
         const chunks: BlobPart[] = [];
 
-        recorder.ondataavailable = (e) => {
-          if (e.data.size > 0) chunks.push(e.data);
-        };
+        recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
 
         recorder.onstop = () => {
           const blob = new Blob(chunks, { type: "video/webm" });
-
-          // Auto download to device
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
+          const url  = URL.createObjectURL(blob);
+          const a    = document.createElement("a");
+          a.href     = url;
           a.download = `evidence-${Date.now()}.webm`;
           a.click();
           URL.revokeObjectURL(url);
 
-          // Upload to backend
           const formData = new FormData();
           formData.append("file", blob, `evidence-${Date.now()}.webm`);
           formData.append("incidentType", "sos-triggered");
+          formData.append("triggerReason", triggerReason);
 
           fetch("http://localhost:3000/api/evidence/upload", {
             method: "POST",
@@ -70,9 +71,7 @@ export default function SOSActiveScreen() {
         recorder.start(1000);
         recorderRef.current = recorder;
 
-        timerRef.current = setInterval(() => {
-          setRecordingTime((t) => t + 1);
-        }, 1000);
+        timerRef.current = setInterval(() => setRecordingTime((t) => t + 1), 1000);
       } catch {
         setCamStatus("denied");
         setMicStatus("denied");
@@ -86,7 +85,7 @@ export default function SOSActiveScreen() {
       mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const stopSOS = () => {
     recorderRef.current?.stop();
@@ -97,22 +96,35 @@ export default function SOSActiveScreen() {
   };
 
   const formatTime = (s: number) => {
-    const m = Math.floor(s / 60);
+    const m   = Math.floor(s / 60);
     const sec = s % 60;
     return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
   };
 
+  // ── Trigger reason badge config ────────────────────────────────────────────
+  const isVoiceTrigger  = triggerReason.toLowerCase().includes("panic word") || triggerReason.toLowerCase().includes("raised voice");
+  const triggerIcon     = triggerReason.toLowerCase().includes("panic word")  ? "🗣️"
+                        : triggerReason.toLowerCase().includes("raised voice") ? "📢"
+                        : triggerReason.toLowerCase().includes("tap")          ? "📲"
+                        : triggerReason.toLowerCase().includes("s-key")        ? "⌨️"
+                        : "🚨";
+
   return (
     <div className="app-container min-h-screen flex flex-col items-center justify-center px-6 relative overflow-hidden">
 
+      {/* Pulse rings */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="absolute w-48 h-48 rounded-full border-2 border-primary/30"
-            style={{ animation: `red-pulse-ring 2s ease-out infinite ${i * 0.5}s` }} />
+          <div
+            key={i}
+            className="absolute w-48 h-48 rounded-full border-2 border-primary/30"
+            style={{ animation: `red-pulse-ring 2s ease-out infinite ${i * 0.5}s` }}
+          />
         ))}
       </div>
 
-      <div className="relative z-10 text-center mb-6 animate-fade-in">
+      {/* Header */}
+      <div className="relative z-10 text-center mb-4 animate-fade-in">
         <div className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-glow-pulse">
           <span className="text-4xl">🚨</span>
         </div>
@@ -120,6 +132,28 @@ export default function SOSActiveScreen() {
         <p className="text-sm text-muted-foreground font-body">Alerting your emergency contacts</p>
       </div>
 
+      {/* ── Trigger reason badge ─────────────────────────────────────────── */}
+      <div className={`relative z-10 w-full mb-4 p-3 rounded-xl flex items-center gap-3 ${
+        isVoiceTrigger ? "bg-primary/10 border border-primary/30" : "bg-card border border-border"
+      }`}>
+        <span className="text-2xl">{triggerIcon}</span>
+        <div>
+          <p className="text-[10px] font-heading font-bold text-muted-foreground uppercase tracking-wider mb-0.5">
+            Triggered by
+          </p>
+          <p className={`text-sm font-body font-semibold ${isVoiceTrigger ? "text-primary" : "text-foreground"}`}>
+            {triggerReason}
+          </p>
+        </div>
+        {isVoiceTrigger && (
+          <div className="ml-auto flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <span className="text-[10px] text-primary font-heading font-bold">AI DETECTED</span>
+          </div>
+        )}
+      </div>
+
+      {/* Evidence collection */}
       <div className="relative z-10 w-full p-3 bg-primary/10 border border-primary/20 rounded-xl mb-4">
         <div className="flex items-center justify-between mb-2">
           <p className="text-[11px] text-primary font-heading font-bold">AUTO EVIDENCE COLLECTION</p>
@@ -130,20 +164,21 @@ export default function SOSActiveScreen() {
           )}
         </div>
         <div className="flex gap-2">
-          <div className="flex-1 bg-card rounded-lg p-2 text-center border border-border">
-            <p className="text-lg">📷</p>
-            <p className="text-[10px] text-muted-foreground">Camera</p>
-            <p className={`text-[10px] font-bold ${camStatus === "recording" ? "text-primary" : camStatus === "denied" ? "text-yellow" : "text-muted-foreground"}`}>
-              {camStatus === "recording" ? "● Recording" : camStatus === "denied" ? "Denied" : "Starting..."}
-            </p>
-          </div>
-          <div className="flex-1 bg-card rounded-lg p-2 text-center border border-border">
-            <p className="text-lg">🎙️</p>
-            <p className="text-[10px] text-muted-foreground">Audio</p>
-            <p className={`text-[10px] font-bold ${micStatus === "recording" ? "text-primary" : micStatus === "denied" ? "text-yellow" : "text-muted-foreground"}`}>
-              {micStatus === "recording" ? "● Recording" : micStatus === "denied" ? "Denied" : "Starting..."}
-            </p>
-          </div>
+          {[
+            { icon: "📷", label: "Camera", status: camStatus },
+            { icon: "🎙️", label: "Audio",  status: micStatus },
+          ].map(({ icon, label, status }) => (
+            <div key={label} className="flex-1 bg-card rounded-lg p-2 text-center border border-border">
+              <p className="text-lg">{icon}</p>
+              <p className="text-[10px] text-muted-foreground">{label}</p>
+              <p className={`text-[10px] font-bold ${
+                status === "recording" ? "text-primary" :
+                status === "denied"    ? "text-yellow"  : "text-muted-foreground"
+              }`}>
+                {status === "recording" ? "● Recording" : status === "denied" ? "Denied" : "Starting..."}
+              </p>
+            </div>
+          ))}
           <div className="flex-1 bg-card rounded-lg p-2 text-center border border-border">
             <p className="text-lg">📍</p>
             <p className="text-[10px] text-muted-foreground">Location</p>
@@ -162,10 +197,14 @@ export default function SOSActiveScreen() {
         )}
       </div>
 
+      {/* Contacts */}
       <div className="relative z-10 w-full space-y-2.5 mb-4">
         {contacts.map((c) => (
           <div key={c.id} className="flex items-center gap-3 p-3 bg-card/80 backdrop-blur rounded-xl border border-border">
-            <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-heading font-bold text-primary-foreground" style={{ backgroundColor: c.color }}>
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-heading font-bold text-primary-foreground"
+              style={{ backgroundColor: c.color }}
+            >
               {c.name[0]}
             </div>
             <div className="flex-1">
@@ -180,6 +219,7 @@ export default function SOSActiveScreen() {
         ))}
       </div>
 
+      {/* Live location */}
       <div className="relative z-10 w-full p-3 bg-teal/10 border border-teal/20 rounded-xl mb-4 flex items-center gap-3">
         <div className="relative">
           <div className="w-3 h-3 rounded-full bg-teal" />
@@ -188,6 +228,7 @@ export default function SOSActiveScreen() {
         <p className="text-sm font-body text-teal">Live location being shared</p>
       </div>
 
+      {/* Emergency calls */}
       <div className="relative z-10 w-full p-3 bg-yellow/10 border border-yellow/20 rounded-xl mb-6">
         <p className="text-xs font-body text-yellow text-center mb-3">Call for immediate help</p>
         <div className="flex gap-3">
@@ -208,12 +249,13 @@ export default function SOSActiveScreen() {
         </div>
       </div>
 
-      <button onClick={stopSOS}
-        className="relative z-10 w-full py-3.5 bg-teal text-accent-foreground font-heading font-bold text-lg rounded-xl hover:brightness-110 active:scale-[0.98] transition-all">
-        I am Safe - Stop SOS
+      <button
+        onClick={stopSOS}
+        className="relative z-10 w-full py-3.5 bg-teal text-accent-foreground font-heading font-bold text-lg rounded-xl hover:brightness-110 active:scale-[0.98] transition-all"
+      >
+        I am Safe — Stop SOS
       </button>
 
     </div>
   );
 }
-
