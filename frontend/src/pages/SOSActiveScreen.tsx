@@ -43,13 +43,28 @@ export default function SOSActiveScreen() {
 
         recorder.onstop = () => {
           const blob = new Blob(chunks, { type: "video/webm" });
+
+          // Auto download to device
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
           a.download = `evidence-${Date.now()}.webm`;
           a.click();
           URL.revokeObjectURL(url);
-          console.log("Evidence saved:", blob.size, "bytes");
+
+          // Upload to backend
+          const formData = new FormData();
+          formData.append("file", blob, `evidence-${Date.now()}.webm`);
+          formData.append("incidentType", "sos-triggered");
+
+          fetch("http://localhost:3000/api/evidence/upload", {
+            method: "POST",
+            headers: { "x-user-id": "1" },
+            body: formData,
+          })
+            .then((r) => r.json())
+            .then((data) => console.log("Evidence uploaded:", data.evidenceId))
+            .catch((err) => console.log("Upload failed, saved locally:", err));
         };
 
         recorder.start(1000);
