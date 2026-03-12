@@ -1,3 +1,4 @@
+require('dotenv').config();
 // ============================================================
 //  trusttrail — Backend Entry Point
 //  Amirtha's backend server

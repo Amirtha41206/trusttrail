@@ -14,8 +14,8 @@ const users = [
     email: 'priya@example.com',
     password: 'hashed_password_here', // In real app: use bcrypt
     emergencyContacts: [
-      { name: 'Amma', phone: '9876500001' },
-      { name: 'Sister', phone: '9876500002' }
+      { name: 'Amma', phone: '7558187083' },
+      { name: 'Sister', phone: '7200461781' }
     ],
     createdAt: new Date()
   }
