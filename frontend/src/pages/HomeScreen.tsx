@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "@/contexts/AppContext";
 import BottomNav from "@/components/BottomNav";
@@ -7,8 +7,14 @@ export default function HomeScreen() {
   const { user, travellers, alerts, setSosActive } = useApp();
   const navigate = useNavigate();
   const [showSosModal, setShowSosModal] = useState(false);
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(2);
   const [counting, setCounting] = useState(false);
+  const [travelMode, setTravelMode] = useState(false);
+
+  const tapCount = useRef(0);
+  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const spaceCount = useRef(0);
+  const spaceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!counting) return;
@@ -23,16 +29,56 @@ export default function HomeScreen() {
     return () => clearTimeout(t);
   }, [counting, countdown, navigate, setSosActive]);
 
+  const triggerInstantSOS = useCallback(() => {
+    setShowSosModal(false);
+    setCounting(false);
+    setSosActive(true);
+    navigate("/sos-active");
+  }, [navigate, setSosActive]);
+
+  useEffect(() => {
+    if (!travelMode) return;
+
+    const handleTap = () => {
+      tapCount.current++;
+      if (tapTimer.current) clearTimeout(tapTimer.current);
+      tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 2000);
+      if (tapCount.current >= 5) {
+        tapCount.current = 0;
+        triggerInstantSOS();
+      }
+    };
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "s" || e.key === "S") {
+        spaceCount.current++;
+        if (spaceTimer.current) clearTimeout(spaceTimer.current);
+        spaceTimer.current = setTimeout(() => { spaceCount.current = 0; }, 1500);
+        if (spaceCount.current >= 3) {
+          spaceCount.current = 0;
+          triggerInstantSOS();
+        }
+      }
+    };
+
+    document.addEventListener("click", handleTap);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("click", handleTap);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [travelMode, triggerInstantSOS]);
+
   const startSOS = () => {
     setShowSosModal(true);
-    setCountdown(5);
+    setCountdown(2);
     setCounting(true);
   };
 
   const cancelSOS = () => {
     setShowSosModal(false);
     setCounting(false);
-    setCountdown(5);
+    setCountdown(2);
   };
 
   const quickActions = [
@@ -64,16 +110,51 @@ export default function HomeScreen() {
       </div>
 
       {/* Safe Banner */}
-      <div className="mx-4 mb-5 p-3.5 rounded-xl bg-teal/10 border border-teal/20 flex items-center gap-3">
+      <div className="mx-4 mb-4 p-3.5 rounded-xl bg-teal/10 border border-teal/20 flex items-center gap-3">
         <div className="relative">
           <div className="w-3 h-3 rounded-full bg-teal" />
           <div className="absolute inset-0 w-3 h-3 rounded-full bg-teal animate-pulse-dot" />
         </div>
         <div>
-          <p className="text-sm font-body font-semibold text-teal">You're in a safe area</p>
+          <p className="text-sm font-body font-semibold text-teal">You are in a safe area</p>
           <p className="text-xs text-muted-foreground font-body">Location: T. Nagar, Chennai</p>
         </div>
       </div>
+
+      {/* Travel Mode Toggle */}
+      <div
+        onClick={() => setTravelMode((v) => !v)}
+        className={`mx-4 mb-4 p-3.5 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${
+          travelMode ? "bg-primary/10 border-primary/40" : "bg-card border-border"
+        }`}
+      >
+        <span className="text-2xl">🚗</span>
+        <div className="flex-1">
+          <p className="text-sm font-heading font-bold text-foreground">
+            Travel Mode{" "}
+            <span className={travelMode ? "text-primary" : "text-muted-foreground"}>
+              {travelMode ? "ON" : "OFF"}
+            </span>
+          </p>
+          <p className="text-xs text-muted-foreground font-body">
+            {travelMode ? "Tap 5x or press S 3x for instant SOS" : "Turn on while travelling alone"}
+          </p>
+        </div>
+        <div className={`w-10 h-5 rounded-full transition-all relative ${travelMode ? "bg-primary" : "bg-muted"}`}>
+          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${travelMode ? "left-5" : "left-0.5"}`} />
+        </div>
+      </div>
+
+      {/* Panic hints - only when travel mode ON */}
+      {travelMode && (
+        <div className="mx-4 mb-4 p-3 rounded-xl bg-primary/5 border border-primary/20">
+          <p className="text-[11px] text-primary font-heading font-bold mb-1">PANIC TRIGGERS ACTIVE</p>
+          <p className="text-[11px] text-muted-foreground font-body leading-relaxed">
+            📲 Tap screen 5 times fast = instant SOS{"\n"}
+            ⌨️ Press S key 3 times fast = silent SOS
+          </p>
+        </div>
+      )}
 
       {/* SOS Button */}
       <div className="flex justify-center mb-6">
