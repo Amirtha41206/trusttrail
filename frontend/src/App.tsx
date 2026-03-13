@@ -14,6 +14,7 @@ import SafeWordScreen from "./pages/SafeWordScreen";
 import ProfileScreen from "./pages/ProfileScreen";
 import SOSActiveScreen from "./pages/SOSActiveScreen";
 import AIThreatDetection from "./pages/AIThreatDetection";
+import GestureDetection from "./pages/GestureDetection";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ function AppRoutes() {
       <Route path="/profile"    element={isLoggedIn ? <ProfileScreen />              : <Navigate to="/" />}      />
       <Route path="/sos-active" element={isLoggedIn ? <SOSActiveScreen />            : <Navigate to="/" />}      />
       <Route path="/ai-threat"  element={isLoggedIn ? <AIThreatPage />              : <Navigate to="/" />}      />
+      <Route path="/gesture"    element={isLoggedIn ? <GestureDetection />          : <Navigate to="/" />}      />
       <Route path="*"           element={<NotFound />}                                                           />
     </Routes>
   );
