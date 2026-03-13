@@ -92,14 +92,14 @@ export default function HomeScreen() {
 
   // ── Quick actions ─────────────────────────────────────────────────────────
   const quickActions = [
-    { icon: "🗺️", label: "Safety Map",        path: "/map"       },
+    { icon: "🗺️", label: "Safety Map", path: "/map" },
     { icon: "👥", label: "Trusted Travellers", path: "/travellers" },
-    { icon: "🧭", label: "Journey Mode",       path: "/journey"   },
-    { icon: "📢", label: "Report",             path: "/report"    },
-    { icon: "🔑", label: "Safe Word",          path: "/safe-word" },
-    { icon: "🛡️", label: "AI Threat",          path: "/ai-threat" },
+    { icon: "🧭", label: "Journey Mode", path: "/journey" },
+    { icon: "📢", label: "Report", path: "/report" },
+    { icon: "🔑", label: "Safe Word", path: "/safe-word" },
+    { icon: "🤖", label: "AI Complaint", path: "/report?tab=complaint" },
+    { icon: "✋", label: "Gesture SOS", path: "/gesture" },
   ];
-
   const levelColors: Record<string, string> = {
     danger:  "bg-primary/20 text-primary border-primary/30",
     warning: "bg-yellow/20 text-yellow border-yellow/30",
