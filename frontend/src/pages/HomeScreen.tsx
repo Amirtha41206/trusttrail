@@ -14,7 +14,7 @@ export default function HomeScreen() {
   const [travelMode, setTravelMode]     = useState(false);
   const [guardStatus, setGuardStatus]   = useState<GuardStatus>("off");
 
-  // ── Central SOS trigger (used by manual + voice guard) ───────────────────
+  // ── Central SOS trigger ───────────────────────────────────────────────────
   const triggerSOS = useCallback((reason: string = "") => {
     setShowSosModal(false);
     setCounting(false);
@@ -22,7 +22,7 @@ export default function HomeScreen() {
     navigate("/sos-active", { state: { reason } });
   }, [navigate, setSosActive]);
 
-  // ── Voice + volume guard (auto-starts when travelMode = true) ────────────
+  // ── Voice + volume guard ──────────────────────────────────────────────────
   useTravelModeGuard({
     enabled:        travelMode,
     onPanicWord:    (word) => triggerSOS(`Panic word detected: "${word}"`),
@@ -30,7 +30,7 @@ export default function HomeScreen() {
     onStatusChange: setGuardStatus,
   });
 
-  // ── Manual tap / S-key shortcuts ─────────────────────────────────────────
+  // ── Manual tap / S-key shortcuts ──────────────────────────────────────────
   const tapCount   = useRef(0);
   const tapTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
   const spaceCount = useRef(0);
@@ -76,30 +76,32 @@ export default function HomeScreen() {
     return () => clearTimeout(t);
   }, [counting, countdown, triggerSOS]);
 
-  const startSOS = () => { setShowSosModal(true); setCountdown(2); setCounting(true); };
+  const startSOS  = () => { setShowSosModal(true); setCountdown(2); setCounting(true); };
   const cancelSOS = () => { setShowSosModal(false); setCounting(false); setCountdown(2); };
 
   // ── Guard status display config ───────────────────────────────────────────
   const guardUI: Record<string, { dot: string; text: string; pulse: boolean; bg: string; border: string } | null> = {
-    off:          null,
-    listening:    { dot: "#00d9a3", text: "🎙️ Listening — say 'help', 'danger', 'bachao'…",  pulse: true,  bg: "rgba(0,217,163,0.07)",  border: "rgba(0,217,163,0.25)"  },
-    panic_word:   { dot: "#ff2d55", text: "⚠️ Panic word heard — SOS triggered!",             pulse: false, bg: "rgba(255,45,85,0.10)",  border: "rgba(255,45,85,0.35)"  },
-    raised_voice: { dot: "#ff2d55", text: "⚠️ Raised voice detected — SOS triggered!",        pulse: false, bg: "rgba(255,45,85,0.10)",  border: "rgba(255,45,85,0.35)"  },
-    mic_denied:   { dot: "#f5c518", text: "⚠️ Mic denied — voice guard inactive",             pulse: false, bg: "rgba(245,197,24,0.08)", border: "rgba(245,197,24,0.30)" },
-    speech_error: { dot: "#f5c518", text: "⚠️ Speech recognition unavailable on this device", pulse: false, bg: "rgba(245,197,24,0.08)", border: "rgba(245,197,24,0.30)" },
+    off:           null,
+    listening:     { dot: "#00d9a3", text: "🎙️ Say 'help', 'danger', 'bachao' clearly…",     pulse: true,  bg: "rgba(0,217,163,0.07)",  border: "rgba(0,217,163,0.25)"  },
+    panic_word:    { dot: "#ff2d55", text: "⚠️ Panic word heard — SOS triggered!",            pulse: false, bg: "rgba(255,45,85,0.10)",  border: "rgba(255,45,85,0.35)"  },
+    raised_voice:  { dot: "#ff2d55", text: "⚠️ Raised voice detected — SOS triggered!",       pulse: false, bg: "rgba(255,45,85,0.10)",  border: "rgba(255,45,85,0.35)"  },
+    mic_denied:    { dot: "#f5c518", text: "⚠️ Mic denied — allow mic in browser settings",   pulse: false, bg: "rgba(245,197,24,0.08)", border: "rgba(245,197,24,0.30)" },
+    speech_error:  { dot: "#f5c518", text: "⚠️ Speech error — retrying…",                    pulse: false, bg: "rgba(245,197,24,0.08)", border: "rgba(245,197,24,0.30)" },
+    not_supported: { dot: "#f5c518", text: "⚠️ Voice unavailable — use tap or S-key trigger", pulse: false, bg: "rgba(245,197,24,0.08)", border: "rgba(245,197,24,0.30)" },
   };
   const guardInfo = guardUI[guardStatus] ?? null;
 
   // ── Quick actions ─────────────────────────────────────────────────────────
   const quickActions = [
-    { icon: "🗺️", label: "Safety Map", path: "/map" },
-    { icon: "👥", label: "Trusted Travellers", path: "/travellers" },
-    { icon: "🧭", label: "Journey Mode", path: "/journey" },
-    { icon: "📢", label: "Report", path: "/report" },
-    { icon: "🔑", label: "Safe Word", path: "/safe-word" },
-    { icon: "🤖", label: "AI Complaint", path: "/report?tab=complaint" },
-    { icon: "✋", label: "Gesture SOS", path: "/gesture" },
+    { icon: "🗺️", label: "Safety Map",        path: "/map"                  },
+    { icon: "👥", label: "Trusted Travellers", path: "/travellers"           },
+    { icon: "🧭", label: "Journey Mode",       path: "/journey"              },
+    { icon: "📢", label: "Report",             path: "/report"               },
+    { icon: "🔑", label: "Safe Word",          path: "/safe-word"            },
+    { icon: "🤖", label: "AI Complaint",       path: "/report?tab=complaint" },
+    { icon: "✋", label: "Gesture SOS",        path: "/gesture"              },
   ];
+
   const levelColors: Record<string, string> = {
     danger:  "bg-primary/20 text-primary border-primary/30",
     warning: "bg-yellow/20 text-yellow border-yellow/30",
@@ -109,18 +111,17 @@ export default function HomeScreen() {
   return (
     <div className="app-container pb-24">
 
-      {/* ── Animations ───────────────────────────────────────────────────── */}
       <style>{`
         @keyframes guard-ping {
           0%   { transform: scale(1);   opacity: 0.9; }
           100% { transform: scale(2.6); opacity: 0;   }
         }
         @keyframes mic-breathe {
-          0%,100% { opacity: 1;   transform: scale(1);    }
+          0%,100% { opacity: 1;    transform: scale(1);    }
           50%     { opacity: 0.45; transform: scale(0.85); }
         }
-        .guard-ping { animation: guard-ping 1.5s ease-out infinite; }
-        .mic-breathe { animation: mic-breathe 1.4s ease-in-out infinite; }
+        .guard-ping  { animation: guard-ping  1.5s ease-out     infinite; }
+        .mic-breathe { animation: mic-breathe 1.4s ease-in-out  infinite; }
       `}</style>
 
       {/* Header */}
@@ -149,7 +150,7 @@ export default function HomeScreen() {
         </div>
       </div>
 
-      {/* ── Travel Mode Toggle ────────────────────────────────────────────── */}
+      {/* Travel Mode Toggle */}
       <div
         onClick={() => setTravelMode((v) => !v)}
         className={`mx-4 mb-2 p-3.5 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${
@@ -175,13 +176,12 @@ export default function HomeScreen() {
         </div>
       </div>
 
-      {/* ── Guard status pill ─────────────────────────────────────────────── */}
+      {/* Guard status pill */}
       {travelMode && guardInfo && (
         <div
           className="mx-4 mb-3 p-3 rounded-xl flex items-center gap-3"
           style={{ background: guardInfo.bg, border: `1px solid ${guardInfo.border}` }}
         >
-          {/* animated dot */}
           <div className="relative flex-shrink-0" style={{ width: 10, height: 10 }}>
             <div style={{ width: 10, height: 10, borderRadius: "50%", background: guardInfo.dot }} />
             {guardInfo.pulse && (
@@ -191,18 +191,16 @@ export default function HomeScreen() {
               />
             )}
           </div>
-
           <span className="text-xs font-body font-semibold flex-1" style={{ color: guardInfo.dot }}>
             {guardInfo.text}
           </span>
-
           {guardStatus === "listening" && (
             <span className="text-base mic-breathe">🎙️</span>
           )}
         </div>
       )}
 
-      {/* ── Panic triggers hint ───────────────────────────────────────────── */}
+      {/* Panic triggers hint */}
       {travelMode && (
         <div className="mx-4 mb-4 p-3 rounded-xl bg-primary/5 border border-primary/20">
           <p className="text-[11px] text-primary font-heading font-bold mb-1.5">PANIC TRIGGERS ACTIVE</p>
